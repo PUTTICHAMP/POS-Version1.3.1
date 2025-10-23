@@ -30,7 +30,7 @@ class SalesTab(Frame):
         FONT2 = (None, 18)
         
         # หัวข้อ
-        L1 = Label(self, text='เมนูสำหรับขาย', font=FONT1)
+        L1 = Label(self, text='เมนูสำหรับขายสินค้า', font=FONT1)
         L1.pack()
         
         # Frame สำหรับปุ่มสินค้า

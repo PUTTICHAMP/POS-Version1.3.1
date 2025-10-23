@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox
 
 gui = Tk()
 gui.geometry('600x400')
-gui.title('ร้านขายอะไร')
+gui.title('ร้านขายของสำหรับ POS')
 
 
 # --- ตัวแปร ---

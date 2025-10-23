@@ -71,19 +71,19 @@ class SalesTab(Frame):
         
         # ช่องค้นหาบาร์โค้ด พร้อมป้ายกำกับ
         search_label_frame = Frame(self.F2)
-        search_label_frame.pack(pady=(15, 5))
+        search_label_frame.pack(pady=(20, 5))
         
         Label(search_label_frame, text="🔍 สแกนบาร์โค้ดหรือค้นหา:", 
-              font=(None, 10, 'bold')).pack()
+              font=(None, 11, 'bold')).pack()
         
         self.search = ttk.Entry(self.F2, textvariable=self.v_search, font=(None, 25), width=12)
-        self.search.pack(pady=(0, 9))
+        self.search.pack(pady=(0, 10))
         self.search.bind('<Return>', self.search_product)
         self.search.focus()
         
         # Label แสดง Barcode ที่สแกนล่าสุด
         self.last_barcode_frame = Frame(self.F2, bg='#e8f5e9', relief=RIDGE, bd=2)
-        self.last_barcode_frame.pack(fill=X, pady=(0, 8))
+        self.last_barcode_frame.pack(fill=X, pady=(0, 10))
         
         self.v_last_barcode = StringVar()
         self.v_last_barcode.set("พร้อมสแกนสินค้า...")
@@ -94,9 +94,6 @@ class SalesTab(Frame):
         # ตารางขาย
         self.create_sales_table()
         
-        # ⭐ ปุ่มล้างตะกร้า
-        self.create_clear_button()
-    
         # สรุปยอดขาย
         self.create_summary_section()
         
@@ -181,73 +178,6 @@ class SalesTab(Frame):
         # เพิ่ม tag สำหรับ alternating row colors
         self.table_sales.tag_configure('oddrow', background='#ffffff')
         self.table_sales.tag_configure('evenrow', background='#f0f0f0')
-    
-    def create_clear_button(self):
-        """สร้างปุ่มล้างตะกร้า"""
-        clear_frame = Frame(self.F2, bg='#f5f5f5')
-        clear_frame.pack(pady=5, fill=X)
-        
-        # ปุ่มล้างตะกร้า
-        self.btn_clear_cart = Button(
-            clear_frame,
-            text='🗑️ ล้างตะกร้า',
-            command=self.clear_cart_confirm,
-            bg='#f44336',
-            fg='white',
-            font=('Arial', 10, 'bold'),
-            cursor='hand2',
-            relief=FLAT,
-            pady=3
-        )
-        self.btn_clear_cart.pack(fill=X)
-        
-        # Hover effect
-        self.btn_clear_cart.bind('<Enter>', lambda e: e.widget.config(bg='#d32f2f'))
-        self.btn_clear_cart.bind('<Leave>', lambda e: e.widget.config(bg='#f44336'))
-    
-    def clear_cart_confirm(self):
-        """ล้างตะกร้าสินค้าทั้งหมด (พร้อมยืนยัน)"""
-        try:
-            # ตรวจสอบว่ามีสินค้าในตะกร้าหรือไม่
-            if not self.cart or len(self.cart) == 0:
-                messagebox.showinfo(
-                    "ตะกร้าว่าง",
-                    "ไม่มีสินค้าในตะกร้า"
-                )
-                return
-            
-            # นับจำนวนสินค้า
-            total_items = len(self.cart)
-            total_quantity = sum(item[3] for item in self.cart.values())
-            subtotal, vat, grand_total = self.calculate_totals()
-            
-            # ยืนยันการล้างตะกร้า
-            confirm = messagebox.askyesno(
-                "⚠️ ยืนยันการล้างตะกร้า",
-                f"คุณต้องการลบสินค้าทั้งหมดออกจากตะกร้าใช่หรือไม่?\n\n"
-                f"📦 จำนวนรายการ: {total_items} รายการ\n"
-                f"📊 จำนวนสินค้า: {total_quantity} ชิ้น\n"
-                f"💰 มูลค่ารวม: {grand_total:,.2f} บาท\n\n"
-                f"⚠️ การดำเนินการนี้ไม่สามารถย้อนกลับได้!",
-                icon='warning'
-            )
-            
-            if confirm:
-                # เคลียร์ตะกร้า
-                self.clear_cart()
-                
-                # แสดงข้อความสำเร็จ
-                self.v_last_barcode.set(f"✅ ล้างตะกร้าเรียบร้อยแล้ว! ({total_items} รายการ)")
-                self.last_barcode_frame.config(bg='#c8e6c9')
-                self.after(3000, lambda: self.reset_barcode_label())
-                
-                print(f"Cart cleared: {total_items} items, {total_quantity} pieces")
-                
-        except Exception as e:
-            messagebox.showerror(
-                "เกิดข้อผิดพลาด",
-                f"ไม่สามารถล้างตะกร้าได้\n\nรายละเอียด: {str(e)}"
-            )
         
     def create_summary_section(self):
         """สร้างส่วนสรุปยอดขาย"""
@@ -274,7 +204,7 @@ class SalesTab(Frame):
     def create_checkout_button(self):
         """สร้างปุ่ม Checkout และปุ่มทดสอบ"""
         self.F4 = Frame(self.F2)
-        self.F4.pack(pady=5, fill=X)
+        self.F4.pack(pady=10, fill=X)
         
         self.btn_checkout = ttk.Button(self.F4, text="💳 CHECKOUT", 
                                       command=self.open_checkout_window,
@@ -295,7 +225,7 @@ class SalesTab(Frame):
             self.btn_test_thermal.pack(side=RIGHT, padx=2, fill=X, expand=True)
         
         style = ttk.Style()
-        style.configure('Checkout.TButton', font=(None, 10, 'bold'))
+        style.configure('Checkout.TButton', font=(None, 16, 'bold'))
         
     def calculate_totals(self):
         """คำนวณยอดรวมทั้งหมด"""

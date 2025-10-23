@@ -15,8 +15,7 @@ class DashboardTab(Frame):
         FONT2 = (None, 14)
         
         # หัวข้อ
-        Label(self, text='Dashboard - สรุปข้อมูลร้าน', font=FONT1).pack(pady=10)
-        
+        Label(self, text='Dashboard - สรุปข้อมูลร้าน', font=('Arial', 18, 'bold')).pack(pady=10)
         # Frame หลัก
         main_frame = Frame(self)
         main_frame.pack(fill=BOTH, expand=True, padx=20, pady=10)

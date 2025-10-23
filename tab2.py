@@ -24,8 +24,8 @@ class ProductTab(Frame):
         
         # ค่าเริ่มต้น
         self.v_unit2.set('ชิ้น')
-        self.v_category2.set('fruit')
-        self.v_reorder_point2.set('5')
+        self.v_category2.set('')
+        self.v_reorder_point2.set('1')
         
         # โหมดแก้ไข
         self.edit_mode = False
@@ -253,7 +253,7 @@ class ProductTab(Frame):
         self.v_cost2.set('')
         self.v_quantity2.set('')
         self.v_unit2.set('ชิ้น')
-        self.v_category2.set('fruit')
+        self.v_category2.set('')
         self.v_reorder_point2.set('5')
         self.supplier_text.delete("1.0", END)
         

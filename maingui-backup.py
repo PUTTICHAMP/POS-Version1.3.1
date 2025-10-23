@@ -19,7 +19,7 @@ y = (hs/2)-(h/2)
 
 GUI.geometry(f'{w}x{h}+{x:.0f}+{y:.0f}')
 # GUI.geometry('700x600')
-GUI.title('โปรแกรมขายของร้านลุง')
+GUI.title('โปรแกรมขายของสำหรับ POS - Version 1.1 Beta')
 
 ##########MENU###########
 menubar = Menu(GUI)
@@ -49,7 +49,7 @@ def AboutMenu(event=None):
     uncle_icon = PhotoImage(file='uncle.png').subsample(2) # .subsample(2) resize down / 2
     Label(GUI2,image=uncle_icon).pack()
     
-    Label(GUI2,text='โปรแกรมนี้เป็นโปรแกรมสำหรับขายของ\nคุณสามารถใช้งานได้ฟรี ไม่มีค่าใช้จ่าย\nTel: 0812345678').pack()
+    Label(GUI2,text='โปรแกรม POS นี้เป็นโปรแกรมสำหรับขายของ\nTel: 090-951-3031').pack()
     
     GUI2.mainloop()
 

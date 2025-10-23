@@ -3,9 +3,9 @@ from tkinter import ttk, messagebox
 
 GUI = Tk()
 GUI.geometry('500x400')
-GUI.title('โปรแกรมร้านชำลุง')
+GUI.title('ร้านขายของสำหรับ POS')
 
-L1 = Label(GUI,text='โปรแกรมร้านชำลุง',font=('tahoma',20))
+L1 = Label(GUI,text='ร้านขายของสำหรับ POS',font=('tahoma',20))
 L1.pack()
 
 # ---------------------------------------

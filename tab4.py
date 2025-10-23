@@ -18,7 +18,7 @@ class ProfitTab(Frame):
         FONT2 = (None, 14)
         
         # หัวข้อ
-        Label(self, text='Profit Analysis - วิเคราะห์กำไร', font=FONT1).pack(pady=10)
+        Label(self, text='Profit Analysis - วิเคราะห์กำไร', font=('Arial', 18, 'bold')).pack(pady=10)
         
         # Frame หลัก
         main_frame = Frame(self)
