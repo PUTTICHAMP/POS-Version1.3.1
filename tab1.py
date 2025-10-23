@@ -24,7 +24,7 @@ except ImportError as e:
 
 class SalesTab(Frame):
     def __init__(self, parent, product_tab=None, dashboard_tab=None, profit_tab=None):
-        super().__init__(parent, bg='#f5f5f5')
+        super().__init__(parent, bg='#ffffff')
         self.pack(fill=BOTH, expand=True)
         
         # Reference ไปยังแท็บอื่นๆ
@@ -47,19 +47,19 @@ class SalesTab(Frame):
         
     def create_widgets(self):
 
-        header_frame = Frame(self, bg='#2c3e50', height=40)
+        header_frame = Frame(self, bg= '#f0f0f0', height=40)
         header_frame.pack(fill=X)
         header_frame.pack_propagate(False)
-        
+        # title_label = Label(self, text='จัดการข้อมูลสินค้า', font=('Arial', 18, 'bold'))
         Label(header_frame, text='🛒 ระบบขายสินค้า', 
-              font=('Arial', 18, 'bold'), 
-              fg='white', bg='#2c3e50').pack(pady=5)
+              font=('Arial', 18, 'bold',), 
+              fg='white', bg='#1e40af').pack(pady=5)
 
-        main_container = Frame(self, bg='#f5f5f5')
+        main_container = Frame(self, bg='#ffffff')
         main_container.pack(fill=BOTH, expand=True, padx=20, pady=20)
         
         # Frame สำหรับปุ่มสินค้า
-        self.F1 = Frame(self, bg='#2c3e50', height=80)
+        self.F1 = Frame(self, bg='#ffffff', height=80)
         self.F1.place(x=70, y=60)
         
         # สร้างปุ่มสินค้าจากฐานข้อมูล
@@ -82,14 +82,14 @@ class SalesTab(Frame):
         self.search.focus()
         
         # Label แสดง Barcode ที่สแกนล่าสุด
-        self.last_barcode_frame = Frame(self.F2, bg='#e8f5e9', relief=RIDGE, bd=2)
+        self.last_barcode_frame = Frame(self.F2, bg='#ffffff', relief=RIDGE, bd=2)
         self.last_barcode_frame.pack(fill=X, pady=(0, 8))
         
         self.v_last_barcode = StringVar()
         self.v_last_barcode.set("พร้อมสแกนสินค้า...")
         
         Label(self.last_barcode_frame, textvariable=self.v_last_barcode, 
-              font=(None, 10), bg='#e8f5e9', fg='#2e7d32').pack(pady=3)
+              font=(None, 10), bg='#ffffff', fg='#2e7d32').pack(pady=3)
         
         # ตารางขาย
         self.create_sales_table()
@@ -180,11 +180,11 @@ class SalesTab(Frame):
         
         # เพิ่ม tag สำหรับ alternating row colors
         self.table_sales.tag_configure('oddrow', background='#ffffff')
-        self.table_sales.tag_configure('evenrow', background='#f0f0f0')
+        self.table_sales.tag_configure('evenrow', background='#ffffff')
     
     def create_clear_button(self):
         """สร้างปุ่มล้างตะกร้า"""
-        clear_frame = Frame(self.F2, bg='#f5f5f5')
+        clear_frame = Frame(self.F2, bg='#ffffff')
         clear_frame.pack(pady=5, fill=X)
         
         # ปุ่มล้างตะกร้า
@@ -238,7 +238,7 @@ class SalesTab(Frame):
                 
                 # แสดงข้อความสำเร็จ
                 self.v_last_barcode.set(f"✅ ล้างตะกร้าเรียบร้อยแล้ว! ({total_items} รายการ)")
-                self.last_barcode_frame.config(bg='#c8e6c9')
+                self.last_barcode_frame.config(bg='#ffffff')
                 self.after(3000, lambda: self.reset_barcode_label())
                 
                 print(f"Cart cleared: {total_items} items, {total_quantity} pieces")
@@ -426,14 +426,14 @@ class SalesTab(Frame):
         
         checkout_window = Toplevel(self)
         checkout_window.title("ระบบชำระเงิน - Checkout")
-        checkout_window.geometry("600x700")
+        checkout_window.geometry("600x800")
         checkout_window.transient(self.master)
         checkout_window.grab_set()
         
         checkout_window.update_idletasks()
-        x = (checkout_window.winfo_screenwidth() // 2) - (600 // 2)
+        x = (checkout_window.winfo_screenwidth() // 2) - (100 // 2)
         y = (checkout_window.winfo_screenheight() // 2) - (700 // 2)
-        checkout_window.geometry(f"600x700+{x}+{y}")
+        checkout_window.geometry(f"700x750+{x}+{y}")
         
         Label(checkout_window, text="ระบบชำระเงิน", font=(None, 20, 'bold')).pack(pady=10)
         
@@ -565,8 +565,8 @@ class SalesTab(Frame):
                   style='Cancel.TButton').pack(side=RIGHT, padx=5, fill=X, expand=True, ipady=10)
         
         style = ttk.Style()
-        style.configure('Success.TButton', font=(None, 14, 'bold'))
-        style.configure('Cancel.TButton', font=(None, 14))
+        style.configure('Success.TButton', font=(None, 14,'bold'))
+        style.configure('Cancel.TButton', font=(None, 14,'bold'))
         
         update_change()
 
