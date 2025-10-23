@@ -1,16 +1,16 @@
-# receipt_printer.py - Fixed Thai Font Version
-from reportlab.lib.pagesizes import A4, letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+# receipt_printer.py - Modern Design Version
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch, mm, cm
+from reportlab.lib.units import mm, cm
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.graphics.shapes import Drawing, Rect, Line
+from reportlab.graphics import renderPDF
 from datetime import datetime
 import os
-import json
-from tkinter import messagebox
 
 class ReceiptPrinter:
     def __init__(self):
@@ -19,39 +19,47 @@ class ReceiptPrinter:
         self.setup_fonts()
         
     def setup_fonts(self):
-        """ตั้งค่าฟอนต์ภาษาไทยตามตัวอย่าง"""
+        """ตั้งค่าฟอนต์ภาษาไทย"""
         try:
-            # รายการฟอนต์ที่จะลอง
             font_paths = [
-                "THSarabunNew.ttf",  # Local file (แนะนำ)
-                "C:/Windows/Fonts/THSarabunNew.ttf",  # Windows
-                "C:/Windows/Fonts/tahoma.ttf",        # Windows Tahoma
-                "/usr/share/fonts/truetype/thai/THSarabunNew.ttf",  # Linux
-                "/System/Library/Fonts/Tahoma.ttf",   # macOS
+                "THSarabunNew.ttf",
+                "C:/Windows/Fonts/THSarabunNew.ttf",
+                "C:/Windows/Fonts/tahoma.ttf",
+                "/usr/share/fonts/truetype/thai/THSarabunNew.ttf",
+                "/System/Library/Fonts/Tahoma.ttf",
             ]
             
             for font_path in font_paths:
                 if os.path.exists(font_path):
                     try:
-                        # ลงทะเบียนฟอนต์แบบเดียวกับตัวอย่าง
                         pdfmetrics.registerFont(TTFont(self.thai_font_name, font_path))
                         self.thai_font_available = True
-                        print(f"✅ Thai font loaded successfully: {font_path}")
+                        print(f"✅ Thai font loaded: {font_path}")
                         return
                     except Exception as e:
-                        print(f"❌ Could not register font {font_path}: {e}")
                         continue
                         
         except Exception as e:
             print(f"Font setup error: {e}")
         
         if not self.thai_font_available:
-            print("⚠️ No Thai font found - receipt will be in English")
+            print("⚠️ No Thai font found - using default")
+    
+    def create_header_decoration(self, width):
+        """สร้างเส้นตกแต่งส่วนหัว"""
+        d = Drawing(width, 3*mm)
+        d.add(Rect(0, 0, width, 3*mm, fillColor=colors.HexColor('#2563eb'), strokeColor=None))
+        return d
+    
+    def create_divider(self, width, color='#e5e7eb'):
+        """สร้างเส้นแบ่ง"""
+        d = Drawing(width, 1*mm)
+        d.add(Line(0, 0.5*mm, width, 0.5*mm, strokeColor=colors.HexColor(color), strokeWidth=1))
+        return d
             
     def create_receipt(self, transaction_data, cart_items, output_filename=None):
-        """สร้างใบเสร็จ PDF ด้วยฟอนต์ไทยที่ถูกต้อง"""
+        """สร้างใบเสร็จ PDF สไตล์โมเดิร์น"""
         try:
-            # กำหนดชื่อไฟล์
             if not output_filename:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_filename = f"receipt_{transaction_data['transaction_id']}_{timestamp}.pdf"
@@ -60,13 +68,13 @@ class ReceiptPrinter:
             doc = SimpleDocTemplate(
                 output_filename,
                 pagesize=A4,
-                rightMargin=25*mm,
-                leftMargin=25*mm,
-                topMargin=25*mm,
-                bottomMargin=25*mm
+                rightMargin=20*mm,
+                leftMargin=20*mm,
+                topMargin=15*mm,
+                bottomMargin=15*mm
             )
             
-            # ลงทะเบียนฟอนต์อีกครั้ง (สำคัญ!)
+            # ลงทะเบียนฟอนต์อีกครั้ง
             if self.thai_font_available:
                 font_paths = ["THSarabunNew.ttf", "C:/Windows/Fonts/THSarabunNew.ttf"]
                 for font_path in font_paths:
@@ -74,114 +82,165 @@ class ReceiptPrinter:
                         pdfmetrics.registerFont(TTFont(self.thai_font_name, font_path))
                         break
             
-            # เตรียม elements
             elements = []
             styles = getSampleStyleSheet()
             
-            # สร้าง custom styles สำหรับภาษาไทย
+            # 🎨 สร้าง Modern Styles - ขนาดใหญ่ หนา คมชัด
             if self.thai_font_available:
+                # Title - ใหญ่มาก และโดดเด่น
                 title_style = ParagraphStyle(
-                    'ThaiTitle',
+                    'ModernTitle',
                     parent=styles['Title'],
                     fontName=self.thai_font_name,
-                    fontSize=20,
-                    spaceAfter=20,
-                    alignment=TA_CENTER,
-                    textColor=colors.darkblue
-                )
-                
-                header_style = ParagraphStyle(
-                    'ThaiHeader',
-                    parent=styles['Normal'],
-                    fontName=self.thai_font_name,
-                    fontSize=12,
+                    fontSize=28,
+                    textColor=colors.HexColor('#0f172a'),
                     spaceAfter=10,
-                    alignment=TA_CENTER
-                )
-                
-                normal_style = ParagraphStyle(
-                    'ThaiNormal',
-                    parent=styles['Normal'],
-                    fontName=self.thai_font_name,
-                    fontSize=11,
-                    spaceAfter=6
-                )
-                
-                footer_style = ParagraphStyle(
-                    'ThaiFooter',
-                    parent=styles['Normal'],
-                    fontName=self.thai_font_name,
-                    fontSize=10,
                     alignment=TA_CENTER,
-                    textColor=colors.grey
-                )
-            else:
-                # ใช้ฟอนต์ default
-                title_style = ParagraphStyle('EngTitle', parent=styles['Title'], fontSize=18, spaceAfter=20, alignment=TA_CENTER, textColor=colors.darkblue)
-                header_style = ParagraphStyle('EngHeader', parent=styles['Normal'], fontSize=12, spaceAfter=10, alignment=TA_CENTER)
-                normal_style = ParagraphStyle('EngNormal', parent=styles['Normal'], fontSize=11, spaceAfter=6)
-                footer_style = ParagraphStyle('EngFooter', parent=styles['Normal'], fontSize=10, alignment=TA_CENTER, textColor=colors.grey)
-            
-            # หัวข้อร้าน
-            if self.thai_font_available:
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>ร้าน..... - POS Shop</b></font>", title_style))
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'>29/25 หมู่2 ตำบลสะเดียง เพชรบูรณ? 67000</font>", header_style))
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'>โทร: 090-951-3031 | อีเมล: Phattananbaosin@shop.com</font>", header_style))
-            else:
-                elements.append(Paragraph("<b>Uncle Shop</b>", title_style))
-                elements.append(Paragraph("29/25 M2 , Sadaing District, Phatcahbun 67000", header_style))
-                elements.append(Paragraph("Tel: 090-951-3031 | Email: Phattananbaosin@gmail.com", header_style))
-            
-            elements.append(Spacer(1, 20))
-            
-            # ข้อมูลใบเสร็จ
-            if self.thai_font_available:
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>เลขที่ใบเสร็จ:</b> {transaction_data['transaction_id']}</font>", normal_style))
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>วันที่:</b> {transaction_data['datetime']}</font>", normal_style))
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>พนักงานขาย:</b> Admin</font>", normal_style))
-            else:
-                elements.append(Paragraph(f"<b>Receipt No:</b> {transaction_data['transaction_id']}", normal_style))
-                elements.append(Paragraph(f"<b>Date:</b> {transaction_data['datetime']}", normal_style))
-                elements.append(Paragraph(f"<b>Cashier:</b> Admin", normal_style))
-            
-            elements.append(Spacer(1, 20))
-            
-            # ตารางรายการสินค้า
-            if self.thai_font_available:
-                # สร้าง style สำหรับ header ที่ชิดขวา
-                header_right_style = ParagraphStyle(
-                    'ThaiHeaderRight',
-                    parent=normal_style,
-                    fontName=self.thai_font_name,
-                    fontSize=11,
-                    alignment=TA_RIGHT
+                    leading=34
                 )
                 
-                table_headers = [
-                    Paragraph(f"<font name='{self.thai_font_name}'><b>รายการ</b></font>", normal_style),
-                    Paragraph(f"<font name='{self.thai_font_name}'><b>จำนวน</b></font>", header_right_style),
-                    Paragraph(f"<font name='{self.thai_font_name}'><b>ราคา/หน่วย</b></font>", header_right_style),
-                    Paragraph(f"<font name='{self.thai_font_name}'><b>รวม</b></font>", header_right_style)
+                # Subtitle - ใหญ่ขึ้น
+                subtitle_style = ParagraphStyle(
+                    'ModernSubtitle',
+                    parent=styles['Normal'],
+                    fontName=self.thai_font_name,
+                    fontSize=14,
+                    textColor=colors.HexColor('#475569'),
+                    spaceAfter=8,
+                    alignment=TA_CENTER,
+                    leading=18
+                )
+                
+                # Receipt Info - ใหญ่ขึ้น
+                info_label_style = ParagraphStyle(
+                    'ModernInfoLabel',
+                    parent=styles['Normal'],
+                    fontName=self.thai_font_name,
+                    fontSize=14,
+                    textColor=colors.HexColor('#334155'),
+                    spaceAfter=5,
+                    leading=18
+                )
+                
+                info_value_style = ParagraphStyle(
+                    'ModernInfoValue',
+                    parent=styles['Normal'],
+                    fontName=self.thai_font_name,
+                    fontSize=14,
+                    textColor=colors.HexColor('#0f172a'),
+                    spaceAfter=5,
+                    leading=18
+                )
+                
+                # Table Header - ใหญ่ขึ้น
+                table_header_style = ParagraphStyle(
+                    'ModernTableHeader',
+                    parent=styles['Normal'],
+                    fontName=self.thai_font_name,
+                    fontSize=14,
+                    textColor=colors.white,
+                    alignment=TA_LEFT,
+                    leading=18
+                )
+                
+                # Footer - ใหญ่ขึ้น
+                footer_style = ParagraphStyle(
+                    'ModernFooter',
+                    parent=styles['Normal'],
+                    fontName=self.thai_font_name,
+                    fontSize=13,
+                    alignment=TA_CENTER,
+                    textColor=colors.HexColor('#64748b'),
+                    leading=17
+                )
+            else:
+                title_style = ParagraphStyle('EngTitle', parent=styles['Title'], fontSize=28, spaceAfter=10, alignment=TA_CENTER, textColor=colors.HexColor('#0f172a'))
+                subtitle_style = ParagraphStyle('EngSubtitle', parent=styles['Normal'], fontSize=14, spaceAfter=8, alignment=TA_CENTER, textColor=colors.HexColor('#475569'))
+                info_label_style = ParagraphStyle('EngInfoLabel', parent=styles['Normal'], fontSize=14, spaceAfter=5, textColor=colors.HexColor('#334155'))
+                info_value_style = ParagraphStyle('EngInfoValue', parent=styles['Normal'], fontSize=14, spaceAfter=5, textColor=colors.HexColor('#0f172a'))
+                table_header_style = ParagraphStyle('EngTableHeader', parent=styles['Normal'], fontSize=14, textColor=colors.white, alignment=TA_LEFT)
+                footer_style = ParagraphStyle('EngFooter', parent=styles['Normal'], fontSize=13, alignment=TA_CENTER, textColor=colors.HexColor('#64748b'))
+            
+            # 📌 Header Section
+            elements.append(Spacer(1, 5))
+            
+            # ชื่อร้าน
+            if self.thai_font_available:
+                elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>ร้าน......... POS</b></font>", title_style))
+                elements.append(Paragraph(f"<font name='{self.thai_font_name}'>29/25 หมู่2 ตำบลสะเดียง เพชรบูรณ์ 67000</font>", subtitle_style))
+                elements.append(Paragraph(f"<font name='{self.thai_font_name}'>โทร: 090-951-3031 | อีเมล: Phattananbaosin@shop.com</font>", subtitle_style))
+            else:
+                elements.append(Paragraph("<b>Uncle Shop POS</b>", title_style))
+                elements.append(Paragraph("29/25 M2, Sadaing District, Phetchabun 67000", subtitle_style))
+                elements.append(Paragraph("Tel: 090-951-3031 | Email: Phattananbaosin@shop.com", subtitle_style))
+            
+            elements.append(Spacer(1, 15))
+            elements.append(self.create_divider(17*cm))
+            elements.append(Spacer(1, 15))
+            
+            # 📋 ข้อมูลใบเสร็จ - จัดเป็น 2 คอลัมน์
+            if self.thai_font_available:
+                info_data = [
+                    [
+                        Paragraph(f"<font name='{self.thai_font_name}'>เลขที่ใบเสร็จ:</font>", info_label_style),
+                        Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['transaction_id']}</b></font>", info_value_style),
+                        Paragraph(f"<font name='{self.thai_font_name}'>วันที่:</font>", info_label_style),
+                        Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['datetime']}</b></font>", info_value_style)
+                    ],
+                    [
+                        Paragraph(f"<font name='{self.thai_font_name}'>พนักงานขาย:</font>", info_label_style),
+                        Paragraph(f"<font name='{self.thai_font_name}'><b>Admin</b></font>", info_value_style),
+                        '',
+                        ''
+                    ]
                 ]
             else:
-                # สร้าง style สำหรับ header ที่ชิดขวา
-                header_right_style = ParagraphStyle(
-                    'EngHeaderRight',
-                    parent=normal_style,
-                    fontSize=11,
-                    alignment=TA_RIGHT
-                )
-                
+                info_data = [
+                    [
+                        Paragraph("Receipt No:", info_label_style),
+                        Paragraph(f"<b>{transaction_data['transaction_id']}</b>", info_value_style),
+                        Paragraph("Date:", info_label_style),
+                        Paragraph(f"<b>{transaction_data['datetime']}</b>", info_value_style)
+                    ],
+                    [
+                        Paragraph("Cashier:", info_label_style),
+                        Paragraph("<b>Admin</b>", info_value_style),
+                        '',
+                        ''
+                    ]
+                ]
+            
+            info_table = Table(info_data, colWidths=[3.5*cm, 4*cm, 2.5*cm, 7*cm])
+            info_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            elements.append(info_table)
+            
+            elements.append(Spacer(1, 15))
+            
+            # 🛒 ตารางสินค้า - สไตล์โมเดิร์น
+            if self.thai_font_available:
+                header_right = ParagraphStyle('ThaiHR', parent=table_header_style, alignment=TA_RIGHT, fontName=self.thai_font_name)
                 table_headers = [
-                    Paragraph("<b>Items</b>", normal_style),
-                    Paragraph("<b>Qty</b>", header_right_style),
-                    Paragraph("<b>Price/Unit</b>", header_right_style),
-                    Paragraph("<b>Total</b>", header_right_style)
+                    Paragraph(f"<font name='{self.thai_font_name}'><b>รายการสินค้า</b></font>", table_header_style),
+                    Paragraph(f"<font name='{self.thai_font_name}'><b>จำนวน</b></font>", header_right),
+                    Paragraph(f"<font name='{self.thai_font_name}'><b>ราคา/หน่วย</b></font>", header_right),
+                    Paragraph(f"<font name='{self.thai_font_name}'><b>รวม</b></font>", header_right)
+                ]
+            else:
+                header_right = ParagraphStyle('EngHR', parent=table_header_style, alignment=TA_RIGHT)
+                table_headers = [
+                    Paragraph("<b>Items</b>", table_header_style),
+                    Paragraph("<b>Qty</b>", header_right),
+                    Paragraph("<b>Price</b>", header_right),
+                    Paragraph("<b>Total</b>", header_right)
                 ]
             
             table_data = [table_headers]
             
-            # เพิ่มข้อมูลสินค้า
+            # เพิ่มสินค้า
             for item in cart_items:
                 barcode, title, price, quantity = item
                 price = float(price)
@@ -189,109 +248,116 @@ class ReceiptPrinter:
                 total = price * quantity
                 
                 if self.thai_font_available:
-                    # สร้าง style สำหรับตัวเลขชิดขวา
-                    number_right_style = ParagraphStyle(
-                        'ThaiNumberRight',
-                        parent=normal_style,
-                        fontName=self.thai_font_name,
-                        fontSize=11,
-                        alignment=TA_RIGHT
-                    )
+                    item_style = ParagraphStyle('ThaiItem', parent=info_value_style, fontSize=13, fontName=self.thai_font_name)
+                    num_right = ParagraphStyle('ThaiNumR', parent=info_value_style, alignment=TA_RIGHT, fontSize=13, fontName=self.thai_font_name)
                     
                     row = [
-                        Paragraph(f"<font name='{self.thai_font_name}'>{title}</font>", normal_style),
-                        Paragraph(f"<font name='{self.thai_font_name}'>{quantity}</font>", number_right_style),
-                        Paragraph(f"<font name='{self.thai_font_name}'>{price:,.2f}</font>", number_right_style),
-                        Paragraph(f"<font name='{self.thai_font_name}'>{total:,.2f}</font>", number_right_style)
+                        Paragraph(f"<font name='{self.thai_font_name}'><b>{title}</b></font>", item_style),
+                        Paragraph(f"<font name='{self.thai_font_name}'><b>{quantity}</b></font>", num_right),
+                        Paragraph(f"<font name='{self.thai_font_name}'><b>{price:,.2f}</b></font>", num_right),
+                        Paragraph(f"<font name='{self.thai_font_name}'><b>{total:,.2f}</b></font>", num_right)
                     ]
                 else:
-                    # สร้าง style สำหรับตัวเลขชิดขวา
-                    number_right_style = ParagraphStyle(
-                        'EngNumberRight',
-                        parent=normal_style,
-                        fontSize=11,
-                        alignment=TA_RIGHT
-                    )
+                    item_style = ParagraphStyle('EngItem', parent=info_value_style, fontSize=13)
+                    num_right = ParagraphStyle('EngNumR', parent=info_value_style, alignment=TA_RIGHT, fontSize=13)
                     
-                    # แปลงข้อความไทยเป็นอังกฤษ
                     clean_title = self.clean_thai_text(title)
                     row = [
-                        Paragraph(clean_title, normal_style),
-                        Paragraph(str(quantity), number_right_style),
-                        Paragraph(f"{price:,.2f}", number_right_style),
-                        Paragraph(f"{total:,.2f}", number_right_style)
+                        Paragraph(f"<b>{clean_title}</b>", item_style),
+                        Paragraph(f"<b>{quantity}</b>", num_right),
+                        Paragraph(f"<b>{price:,.2f}</b>", num_right),
+                        Paragraph(f"<b>{total:,.2f}</b>", num_right)
                     ]
                 
                 table_data.append(row)
             
-            # สร้างตาราง
-            table = Table(table_data, colWidths=[8*cm, 2*cm, 3*cm, 3*cm])
+            # สร้างตาราง - สีทันสมัย
+            table = Table(table_data, colWidths=[7.5*cm, 2.5*cm, 3.5*cm, 3.5*cm])
             table.setStyle(TableStyle([
-                # Header
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                # Header - สีน้ำเงินสวย
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('FONTSIZE', (0, 0), (-1, 0), 14),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('TOPPADDING', (0, 0), (-1, 0), 12),
                 
-                # Data rows
-                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                # Data rows - สลับสี
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f1f5f9')]),
+                ('LINEBELOW', (0, 0), (-1, 0), 2.5, colors.HexColor('#1e40af')),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 1), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 10),
             ]))
             
             elements.append(table)
             elements.append(Spacer(1, 20))
             
-            # สรุปยอดเงิน
+            # 💰 สรุปยอดเงิน - การ์ดสไตล์โมเดิร์น
             if self.thai_font_available:
+                summary_label = ParagraphStyle('ThaiSumLabel', parent=info_label_style, fontSize=15, alignment=TA_RIGHT, fontName=self.thai_font_name)
+                summary_value = ParagraphStyle('ThaiSumValue', parent=info_value_style, fontSize=15, alignment=TA_RIGHT, fontName=self.thai_font_name)
+                summary_total = ParagraphStyle('ThaiTotal', parent=info_value_style, fontSize=20, alignment=TA_RIGHT, textColor=colors.HexColor('#1e40af'), fontName=self.thai_font_name)
+                
                 summary_data = [
-                    [Paragraph(f"<font name='{self.thai_font_name}'>ยอดรวม (Subtotal)</font>", normal_style), 
-                     Paragraph(f"<font name='{self.thai_font_name}'>{transaction_data['subtotal']:,.2f} บาท</font>", normal_style)],
-                    [Paragraph(f"<font name='{self.thai_font_name}'>ภาษีมูลค่าเพิ่ม 7%</font>", normal_style), 
-                     Paragraph(f"<font name='{self.thai_font_name}'>{transaction_data['vat']:,.2f} บาท</font>", normal_style)],
-                    ['', ''],  # เส้นแบ่ง
-                    [Paragraph(f"<font name='{self.thai_font_name}'><b>รวมทั้งหมด (Grand Total)</b></font>", normal_style), 
-                     Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['grand_total']:,.2f} บาท</b></font>", normal_style)],
-                    [Paragraph(f"<font name='{self.thai_font_name}'>เงินที่รับ</font>", normal_style), 
-                     Paragraph(f"<font name='{self.thai_font_name}'>{transaction_data['received_amount']:,.2f} บาท</font>", normal_style)],
-                    [Paragraph(f"<font name='{self.thai_font_name}'>เงินทอน</font>", normal_style), 
-                     Paragraph(f"<font name='{self.thai_font_name}'>{transaction_data['change_amount']:,.2f} บาท</font>", normal_style)]
+                    [Paragraph(f"<font name='{self.thai_font_name}'><b>ยอดรวม</b></font>", summary_label), 
+                     Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['subtotal']:,.2f} ฿</b></font>", summary_value)],
+                    [Paragraph(f"<font name='{self.thai_font_name}'><b>ภาษีมูลค่าเพิ่ม 7%</b></font>", summary_label), 
+                     Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['vat']:,.2f} ฿</b></font>", summary_value)],
+                    ['', ''],
+                    [Paragraph(f"<font name='{self.thai_font_name}'><b>รวมทั้งหมด</b></font>", summary_total), 
+                     Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['grand_total']:,.2f} ฿</b></font>", summary_total)],
+                    ['', ''],
+                    [Paragraph(f"<font name='{self.thai_font_name}'><b>เงินที่รับ</b></font>", summary_label), 
+                     Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['received_amount']:,.2f} ฿</b></font>", summary_value)],
+                    [Paragraph(f"<font name='{self.thai_font_name}'><b>เงินทอน</b></font>", summary_label), 
+                     Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['change_amount']:,.2f} ฿</b></font>", summary_value)]
                 ]
             else:
+                summary_label = ParagraphStyle('EngSumLabel', parent=info_label_style, fontSize=15, alignment=TA_RIGHT)
+                summary_value = ParagraphStyle('EngSumValue', parent=info_value_style, fontSize=15, alignment=TA_RIGHT)
+                summary_total = ParagraphStyle('EngTotal', parent=info_value_style, fontSize=20, alignment=TA_RIGHT, textColor=colors.HexColor('#1e40af'))
+                
                 summary_data = [
-                    [Paragraph("Subtotal", normal_style), Paragraph(f"{transaction_data['subtotal']:,.2f} THB", normal_style)],
-                    [Paragraph("VAT 7%", normal_style), Paragraph(f"{transaction_data['vat']:,.2f} THB", normal_style)],
+                    [Paragraph("<b>Subtotal</b>", summary_label), Paragraph(f"<b>{transaction_data['subtotal']:,.2f} ฿</b>", summary_value)],
+                    [Paragraph("<b>VAT 7%</b>", summary_label), Paragraph(f"<b>{transaction_data['vat']:,.2f} ฿</b>", summary_value)],
                     ['', ''],
-                    [Paragraph("<b>Grand Total</b>", normal_style), Paragraph(f"<b>{transaction_data['grand_total']:,.2f} THB</b>", normal_style)],
-                    [Paragraph("Received", normal_style), Paragraph(f"{transaction_data['received_amount']:,.2f} THB", normal_style)],
-                    [Paragraph("Change", normal_style), Paragraph(f"{transaction_data['change_amount']:,.2f} THB", normal_style)]
+                    [Paragraph("<b>Grand Total</b>", summary_total), Paragraph(f"<b>{transaction_data['grand_total']:,.2f} ฿</b>", summary_total)],
+                    ['', ''],
+                    [Paragraph("<b>Received</b>", summary_label), Paragraph(f"<b>{transaction_data['received_amount']:,.2f} ฿</b>", summary_value)],
+                    [Paragraph("<b>Change</b>", summary_label), Paragraph(f"<b>{transaction_data['change_amount']:,.2f} ฿</b>", summary_value)]
                 ]
             
-            summary_table = Table(summary_data, colWidths=[10*cm, 6*cm])
+            summary_table = Table(summary_data, colWidths=[11*cm, 6*cm])
             summary_table.setStyle(TableStyle([
-                ('ALIGN', (0, 0), (0, -1), 'RIGHT'),   # คอลัมน์ซ้าย (ป้ายกำกับ) ชิดขวา
-                ('ALIGN', (1, 0), (1, -1), 'RIGHT'),   # คอลัมน์ขวา (ตัวเลข) ชิดขวา
-                ('FONTSIZE', (0, 0), (-1, -1), 11),
+                ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                ('LINEABOVE', (0, 2), (-1, 2), 1.5, colors.HexColor('#e5e7eb')),
+                ('LINEABOVE', (0, 4), (-1, 4), 1.5, colors.HexColor('#e5e7eb')),
+                ('BACKGROUND', (0, 3), (-1, 3), colors.HexColor('#eff6ff')),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-                ('BACKGROUND', (0, 3), (-1, 3), colors.lightgrey),  # Grand total row
-                ('LINEBELOW', (0, 2), (-1, 2), 1, colors.black),   # เส้นแบ่ง
+                ('TOPPADDING', (0, 3), (-1, 3), 10),
+                ('BOTTOMPADDING', (0, 3), (-1, 3), 10),
             ]))
             
             elements.append(summary_table)
-            elements.append(Spacer(1, 30))
+            elements.append(Spacer(1, 25))
             
-            # ข้อความท้ายใบเสร็จ
+            # 📝 Footer
+            elements.append(self.create_divider(17*cm))
+            elements.append(Spacer(1, 15))
+            
             if self.thai_font_available:
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'>ขอบคุณที่ใช้บริการ</font>", footer_style))
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'>Thank you for your business</font>", footer_style))
-                elements.append(Spacer(1, 10))
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'>พิมพ์เมื่อ: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</font>", footer_style))
+                elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>ขอบคุณที่ใช้บริการ Thank you for your business : พิมพ์เมื่อ: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</b></font>", footer_style))
+                # elements.append(Paragraph(f"<font name='{self.thai_font_name}'>Thank you for your business</font>", footer_style))
+                elements.append(Spacer(1, 8))
+                #elements.append(Paragraph(f"<font name='{self.thai_font_name}'>พิมพ์เมื่อ: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</font>", footer_style))
             else:
-                elements.append(Paragraph("Thank you for your business", footer_style))
+                elements.append(Paragraph("<b>Thank you for your business</b>", footer_style))
                 elements.append(Paragraph("Have a nice day!", footer_style))
-                elements.append(Spacer(1, 10))
-                elements.append(Paragraph(f"Printed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", footer_style))
+                elements.append(Spacer(1, 8))
+                elements.append(Paragraph(f"Printed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", footer_style))
             
             # สร้าง PDF
             doc.build(elements)
@@ -313,13 +379,11 @@ class ReceiptPrinter:
             'นม': 'Milk', 'ขนมปัง': 'Bread', 'น้ำ': 'Water', 'ข้าว': 'Rice'
         }
         
-        # แทนที่คำที่รู้จัก
         for thai, eng in thai_to_eng.items():
             text = text.replace(thai, eng)
         
-        # ลบตัวอักษรไทยที่เหลือ
         text = re.sub(r'[ก-๙]', '', text)
-        text = ' '.join(text.split())  # ทำความสะอาดช่องว่าง
+        text = ' '.join(text.split())
         
         return text.strip() if text.strip() else "Product"
     
@@ -341,12 +405,12 @@ class ReceiptPrinter:
             
             # เปิดไฟล์ PDF
             try:
-                os.startfile(filename)  # Windows
+                os.startfile(filename)
             except AttributeError:
                 try:
-                    os.system(f"open '{filename}'")  # macOS
+                    os.system(f"open '{filename}'")
                 except:
-                    os.system(f"xdg-open '{filename}'")  # Linux
+                    os.system(f"xdg-open '{filename}'")
             
             return filename
             
@@ -355,10 +419,9 @@ class ReceiptPrinter:
 
 # ตัวอย่างการใช้งาน
 def test_receipt_printer():
-    """ทดสอบการสร้างใบเสร็จ"""
+    """ทดสอบการสร้างใบเสร็จแบบโมเดิร์น"""
     printer = ReceiptPrinter()
     
-    # ข้อมูลทดสอบ
     test_cart = [
         ['001', 'Apple - แอปเปิ้ล', 25.00, 3],
         ['002', 'Banana - กล้วย', 15.50, 5],
@@ -383,15 +446,11 @@ def test_receipt_printer():
             change_amount=change,
             cart_items=test_cart
         )
-        print(f"✅ Receipt created successfully: {filename}")
-        print(f"🔤 Thai font available: {printer.thai_font_available}")
+        print(f"✅ Modern receipt created: {filename}")
+        print(f"🎨 Thai font available: {printer.thai_font_available}")
         
     except Exception as e:
         print(f"❌ Error: {e}")
-        print("\n🔧 Solutions:")
-        print("1. Download THSarabunNew.ttf and place in program folder")
-        print("2. Install: pip install reportlab")
-        print("3. Check font paths in code")
 
 if __name__ == "__main__":
     test_receipt_printer()
