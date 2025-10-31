@@ -8,7 +8,7 @@ from elements import SalesTab, ProductTab, DashboardTab
 COLORS = {
     'header': '#1e40af',        # Header, ปุ่มหลัก
     'sidebar': '#546e7a',       # Sidebar, Panel
-    'background': '#ffffff',    #  พื้นหลังหลัก
+    'background': '#f0f0f0',    # พื้นหลังหลัก
     'accent': '#f0f0f0',        # ปุ่มเน้น, Highlights
     'text_dark': '#263238',     # ข้อความเข้ม
     'text_light': '#ffffff',    # ข้อความสว่าง

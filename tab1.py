@@ -50,17 +50,47 @@ class SalesTab(Frame):
         header_frame = Frame(self, bg= '#f0f0f0', height=40)
         header_frame.pack(fill=X)
         header_frame.pack_propagate(False)
-        # title_label = Label(self, text='จัดการข้อมูลสินค้า', font=('Arial', 18, 'bold'))
         Label(header_frame, text='🛒 ระบบขายสินค้า', 
-              font=('Arial', 18, 'bold',), 
+              font=('Arial', 18, 'bold'), 
               fg='white', bg='#1e40af').pack(pady=5)
 
         main_container = Frame(self, bg='#ffffff')
         main_container.pack(fill=BOTH, expand=True, padx=20, pady=20)
         
-        # Frame สำหรับปุ่มสินค้า
-        self.F1 = Frame(self, bg='#ffffff', height=80)
-        self.F1.place(x=70, y=60)
+        # ⭐ สร้าง Frame พร้อม Canvas และ Scrollbar สำหรับปุ่มสินค้า
+        product_container = Frame(self, bg='#ffffff', relief=RIDGE, bd=2)
+        product_container.place(x=70, y=60, width=650, height=500)
+        
+        # สร้าง Canvas
+        self.product_canvas = Canvas(product_container, bg='#f0f0f0', highlightthickness=0)
+        
+        # สร้าง Scrollbar แนวตั้ง
+        v_scrollbar = ttk.Scrollbar(product_container, orient=VERTICAL, 
+                                    command=self.product_canvas.yview)
+        v_scrollbar.pack(side=RIGHT, fill=Y)
+        
+        # สร้าง Scrollbar แนวนอน
+        h_scrollbar = ttk.Scrollbar(product_container, orient=HORIZONTAL,
+                                    command=self.product_canvas.xview)
+        h_scrollbar.pack(side=BOTTOM, fill=X)
+        
+        self.product_canvas.pack(side=LEFT, fill=BOTH, expand=True)
+        
+        # Configure canvas scrollbar
+        self.product_canvas.configure(yscrollcommand=v_scrollbar.set,
+                                     xscrollcommand=h_scrollbar.set)
+        
+        # สร้าง Frame ภายใน Canvas สำหรับใส่ปุ่ม
+        self.F1 = Frame(self.product_canvas, bg='#ffffff')
+        self.canvas_window = self.product_canvas.create_window((0, 0), 
+                                                               window=self.F1, 
+                                                               anchor='nw')
+        
+        # Bind event เพื่ออัปเดต scroll region
+        self.F1.bind('<Configure>', self.on_frame_configure)
+        
+        # เพิ่ม Mouse wheel scrolling
+        self.product_canvas.bind_all("<MouseWheel>", self.on_mousewheel)
         
         # สร้างปุ่มสินค้าจากฐานข้อมูล
         self.create_product_buttons()
@@ -94,7 +124,7 @@ class SalesTab(Frame):
         # ตารางขาย
         self.create_sales_table()
         
-        # ⭐ ปุ่มล้างตะกร้าและลบสินค้าที่เลือก
+        # ปุ่มล้างตะกร้าและลบสินค้าที่เลือก
         self.create_clear_button()
     
         # สรุปยอดขาย
@@ -102,6 +132,28 @@ class SalesTab(Frame):
         
         # ปุ่ม Checkout
         self.create_checkout_button()
+    
+    def on_frame_configure(self, event=None):
+        """อัปเดต scroll region เมื่อ frame มีการเปลี่ยนแปลง"""
+        self.product_canvas.configure(scrollregion=self.product_canvas.bbox("all"))
+    
+    def on_mousewheel(self, event):
+        """เลื่อน canvas ด้วย mouse wheel"""
+        # ตรวจสอบว่า mouse อยู่เหนือ product canvas หรือไม่
+        x, y = self.winfo_pointerxy()
+        widget = self.winfo_containing(x, y)
+        
+        # เลื่อนเฉพาะเมื่อ mouse อยู่เหนือ product area
+        if widget == self.product_canvas or self.is_child_of(widget, self.product_canvas):
+            self.product_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    
+    def is_child_of(self, widget, parent):
+        """ตรวจสอบว่า widget เป็น child ของ parent หรือไม่"""
+        if widget is None:
+            return False
+        if widget == parent:
+            return True
+        return self.is_child_of(widget.master, parent)
         
     def create_product_buttons(self):
         """สร้างปุ่มสินค้าจากฐานข้อมูล"""
@@ -121,7 +173,7 @@ class SalesTab(Frame):
                 
                 B = ttk.Button(self.F1, text=display_text, 
                               command=lambda pd=db: self.button_insert(pd[0], pd[1], pd[2], 1))
-                B.grid(row=row, column=col, ipadx=10, ipady=20, padx=5, pady=5)
+                B.grid(row=row, column=col, ipadx=10, ipady=20, padx=5, pady=5, sticky='ew')
                 col = col + 1
                 if i % 4 == 0:
                     col = 0
@@ -129,11 +181,19 @@ class SalesTab(Frame):
             except (ValueError, IndexError):
                 B = ttk.Button(self.F1, text=db[1] if len(db) > 1 else "Unknown", 
                               command=lambda pd=db: self.button_insert(pd[0], pd[1], pd[2], 1))
-                B.grid(row=row, column=col, ipadx=10, ipady=20, padx=5, pady=5)
+                B.grid(row=row, column=col, ipadx=10, ipady=20, padx=5, pady=5, sticky='ew')
                 col = col + 1
-                if i % 3 == 0:
+                if i % 4 == 0:
                     col = 0
                     row = row + 1
+        
+        # กำหนดน้ำหนักคอลัมน์ให้เท่ากัน
+        for i in range(4):
+            self.F1.grid_columnconfigure(i, weight=1, minsize=150)
+        
+        # อัปเดต scroll region
+        self.F1.update_idletasks()
+        self.product_canvas.configure(scrollregion=self.product_canvas.bbox("all"))
                 
     def create_sales_table(self):
         """สร้างตารางแสดงรายการขาย พร้อมคอลัมน์ Barcode"""
@@ -173,7 +233,7 @@ class SalesTab(Frame):
         self.table_sales.column('quantity', anchor='e')
         self.table_sales.column('total', anchor='e')
         
-        # เพิ่ม scrollbar (ถ้าต้องการ)
+        # เพิ่ม scrollbar
         scrollbar = ttk.Scrollbar(table_frame, orient=VERTICAL, command=self.table_sales.yview)
         scrollbar.pack(side=RIGHT, fill=Y)
         self.table_sales.configure(yscrollcommand=scrollbar.set)
@@ -226,7 +286,6 @@ class SalesTab(Frame):
     def delete_selected_item(self):
         """ลบสินค้าที่เลือกในตาราง"""
         try:
-            # ตรวจสอบว่ามีการเลือกสินค้าหรือไม่
             selected = self.table_sales.selection()
             
             if not selected:
@@ -236,19 +295,13 @@ class SalesTab(Frame):
                 )
                 return
             
-            # ดึงข้อมูลสินค้าที่เลือก
             selected_item = self.table_sales.item(selected[0])
             values = selected_item['values']
-            barcode = str(values[0])  # แปลง barcode เป็น string เพื่อให้ตรงกับ key ใน cart
+            barcode = str(values[0])
             product_name = values[1]
             quantity = values[3]
             total = values[4]
             
-            # Debug: แสดงข้อมูลที่กำลังจะลบ
-            print(f"Attempting to delete - Barcode: {barcode}, Type: {type(barcode)}")
-            print(f"Cart keys: {list(self.cart.keys())}")
-            
-            # ยืนยันการลบ
             confirm = messagebox.askyesno(
                 "⚠️ ยืนยันการลบสินค้า",
                 f"คุณต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?\n\n"
@@ -260,35 +313,23 @@ class SalesTab(Frame):
             )
             
             if confirm:
-                # ลบสินค้าออกจาก cart
                 if barcode in self.cart:
                     del self.cart[barcode]
-                    print(f"✅ Successfully deleted item with barcode: {barcode}")
-                    
-                    # ลบรายการออกจากตาราง
                     self.table_sales.delete(selected[0])
-                    
-                    # อัปเดตตารางและสรุปยอดใหม่
                     self.update_table_with_totals()
                     
-                    # แสดงข้อความสำเร็จ
                     self.v_last_barcode.set(f"🗑️ ลบสินค้าแล้ว: {product_name}")
                     self.last_barcode_frame.config(bg='#fff9c4')
                     self.after(2000, lambda: self.reset_barcode_label())
                     
-                    # Focus กลับไปที่ search box
                     self.search.focus()
-                    
-                    print(f"Cart after deletion: {list(self.cart.keys())}")
                 else:
-                    print(f"❌ Barcode {barcode} not found in cart")
                     messagebox.showerror(
                         "เกิดข้อผิดพลาด",
                         f"ไม่พบสินค้านี้ในตะกร้า\nBarcode: {barcode}"
                     )
                     
         except Exception as e:
-            print(f"Error in delete_selected_item: {str(e)}")
             messagebox.showerror(
                 "เกิดข้อผิดพลาด",
                 f"ไม่สามารถลบสินค้าได้\n\nรายละเอียด: {str(e)}"
@@ -297,7 +338,6 @@ class SalesTab(Frame):
     def clear_cart_confirm(self):
         """ล้างตะกร้าสินค้าทั้งหมด (พร้อมยืนยัน)"""
         try:
-            # ตรวจสอบว่ามีสินค้าในตะกร้าหรือไม่
             if not self.cart or len(self.cart) == 0:
                 messagebox.showinfo(
                     "ตะกร้าว่าง",
@@ -305,12 +345,10 @@ class SalesTab(Frame):
                 )
                 return
             
-            # นับจำนวนสินค้า
             total_items = len(self.cart)
             total_quantity = sum(item[3] for item in self.cart.values())
             subtotal, vat, grand_total = self.calculate_totals()
             
-            # ยืนยันการล้างตะกร้า
             confirm = messagebox.askyesno(
                 "⚠️ ยืนยันการล้างตะกร้า",
                 f"คุณต้องการลบสินค้าทั้งหมดออกจากตะกร้าใช่หรือไม่?\n\n"
@@ -322,15 +360,11 @@ class SalesTab(Frame):
             )
             
             if confirm:
-                # เคลียร์ตะกร้า
                 self.clear_cart()
                 
-                # แสดงข้อความสำเร็จ
                 self.v_last_barcode.set(f"✅ ล้างตะกร้าเรียบร้อยแล้ว! ({total_items} รายการ)")
                 self.last_barcode_frame.config(bg='#ffffff')
                 self.after(3000, lambda: self.reset_barcode_label())
-                
-                print(f"Cart cleared: {total_items} items, {total_quantity} pieces")
                 
         except Exception as e:
             messagebox.showerror(
@@ -418,7 +452,6 @@ class SalesTab(Frame):
             quantity = int(item[3])
             total = price * quantity
             
-            # เพิ่มข้อมูลพร้อม Barcode และใช้ alternating colors
             tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
             self.table_sales.insert('', 'end', 
                                    values=[barcode, title, f"{price:,.2f}", quantity, f"{total:,.2f}"],
@@ -445,11 +478,9 @@ class SalesTab(Frame):
         else:
             self.cart[b][3] = self.cart[b][3] + 1
         
-        # อัปเดต label แสดง barcode ล่าสุด
         self.v_last_barcode.set(f"✅ เพิ่มแล้ว: {t} | Barcode: {b}")
         self.last_barcode_frame.config(bg='#c8e6c9')
         
-        # เปลี่ยนสีกลับหลัง 2 วินาที
         self.after(2000, lambda: self.reset_barcode_label())
             
         self.update_table_with_totals()
@@ -483,7 +514,6 @@ class SalesTab(Frame):
                 else:
                     self.cart[data[0]][3] = self.cart[data[0]][3] + 1
                 
-                # อัปเดต label แสดง barcode
                 self.v_last_barcode.set(f"✅ เพิ่มแล้ว: {data[1]} | Barcode: {barcode}")
                 self.last_barcode_frame.config(bg='#c8e6c9')
                 self.after(2000, lambda: self.reset_barcode_label())
