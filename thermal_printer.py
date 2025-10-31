@@ -79,17 +79,17 @@ class ThermalPrinter:
         
         # หัวข้อร้าน - ย้ายออกซ้ายหน่อย
         pdc.SelectObject(title_font)
-        shop_name = "ร้านลุง - Uncle Shop"
+        shop_name = "ร้านค้าสำหรับ..POS.."
         y_pos = self._print_left_center_text(pdc, shop_name, y_pos)  # ใช้ฟังก์ชันใหม่
         y_pos += line_height
         
         # ข้อมูลร้าน
         pdc.SelectObject(small_font)
-        address = "123 ถนนตัวอย่าง กรุงเทพฯ 10000"
+        address = "29/25 หมู่2 ตำบลสะเดียง เพชรบูรณ์ 67000"
         y_pos = self._print_left_center_text(pdc, address, y_pos)
         y_pos += line_height // 2
         
-        phone = "โทร: 02-123-4567"
+        phone = "โทร: 090-951-3031"
         y_pos = self._print_left_center_text(pdc, phone, y_pos)
         y_pos += line_height
         

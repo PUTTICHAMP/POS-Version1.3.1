@@ -47,19 +47,25 @@ class SalesTab(Frame):
         
     def create_widgets(self):
 
-        header_frame = Frame(self, bg= '#f0f0f0', height=40)
-        header_frame.pack(fill=X)
-        header_frame.pack_propagate(False)
-        Label(header_frame, text='🛒 ระบบขายสินค้า', 
-              font=('Arial', 18, 'bold'), 
-              fg='white', bg='#1e40af').pack(pady=5)
+        header_frame = Frame(self)
+        header_frame.pack(pady=10, fill=X, padx=20)
 
-        main_container = Frame(self, bg='#ffffff')
+        title_label = Label(header_frame, text='🛒 ระบบขายสินค้า', font=('Arial', 18, 'bold'))
+        title_label.pack(side=TOP)
+
+        # header_frame = Frame(self, bg= '#f0f0f0', height=40)
+        # header_frame.pack(fill=X)
+        # header_frame.pack_propagate(False)
+        # Label(header_frame, text='🛒 ระบบขายสินค้า', 
+        #       font=('Arial', 18, 'bold'), 
+        #       fg='white', bg='#94a3b8').pack(pady=5)
+
+        main_container = Frame(self, bg="#ffffff")
         main_container.pack(fill=BOTH, expand=True, padx=20, pady=20)
         
         # ⭐ สร้าง Frame พร้อม Canvas และ Scrollbar สำหรับปุ่มสินค้า
         product_container = Frame(self, bg='#ffffff', relief=RIDGE, bd=2)
-        product_container.place(x=70, y=60, width=650, height=500)
+        product_container.place(x=65, y=60, width=628, height=500)
         
         # สร้าง Canvas
         self.product_canvas = Canvas(product_container, bg='#f0f0f0', highlightthickness=0)
@@ -570,7 +576,7 @@ class SalesTab(Frame):
         received_var.set("0")
         
         Label(payment_frame, text="เงินที่รับ:", font=(None, 12)).pack(anchor='w', padx=10)
-        received_label = Label(payment_frame, textvariable=received_var, font=(None, 20, 'bold'), fg='blue')
+        received_label = Label(payment_frame, textvariable=received_var, font=(None, 20, 'bold'), fg='purple')
         received_label.pack(anchor='w', padx=10, pady=5)
         
         bills_frame = Frame(payment_frame)

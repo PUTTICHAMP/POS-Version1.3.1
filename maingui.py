@@ -6,15 +6,20 @@ from elements import SalesTab, ProductTab, DashboardTab
 
 # Color Scheme
 COLORS = {
-    'header': '#1e40af',        # Header, ปุ่มหลัก
-    'sidebar': '#546e7a',       # Sidebar, Panel
-    'background': '#f0f0f0',    # พื้นหลังหลัก
-    'accent': '#f0f0f0',        # ปุ่มเน้น, Highlights
-    'text_dark': '#263238',     # ข้อความเข้ม
-    'text_light': '#ffffff',    # ข้อความสว่าง
-    'hover': '#039be5',         # สีเมื่อ hover
-    'border': '#64b5f6',        # Light Blue Border
-    'border_dark': '#1976d2'    # Dark Blue Border
+    'header': '#0d9488',        # Teal-600 - Header, ปุ่มหลัก
+    'sidebar': '#475569',       # Slate-600 - Sidebar, Panel
+    'background': '#f8fafc',    # Slate-50 - พื้นหลังหลัก
+    'accent': '#14b8a6',        # Teal-500 - ปุ่มเน้น, Highlights
+    'text_dark': '#0f172a',     # Slate-900 - ข้อความเข้ม
+    'text_light': '#ffffff',    # White - ข้อความสว่าง
+    'hover': "#48b4ab",         # Teal-700 - สีเมื่อ hover
+    'border': '#5eead4',        # Teal-300 - Light Border
+    'border_dark': '#0d9488',   # Teal-600 - Dark Border
+    'card_bg': '#ffffff',       # White - Card Background
+    'success': '#10b981',       # Emerald-500 - Success
+    'warning': '#f59e0b',       # Amber-500 - Warning
+    'error': '#ef4444',         # Red-500 - Error
+    'muted': "#f2f5f9"          # Slate-400 - Muted Text
 }
 # Import แต่ละแท็บ
 try:
@@ -133,7 +138,7 @@ filemenu.add_command(label='ออกจากโปรแกรม', command=la
 def AboutMenu(event=None):
     GUI2 = Toplevel()
     w = 500
-    h = 350
+    h = 450
     
     ws = GUI.winfo_screenwidth()
     hs = GUI.winfo_screenheight()

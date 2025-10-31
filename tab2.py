@@ -40,8 +40,8 @@ class ProductTab(Frame):
         header_frame = Frame(self)
         header_frame.pack(pady=10, fill=X, padx=20)
         
-        title_label = Label(header_frame, text='จัดการข้อมูลสินค้า', font=('Arial', 18, 'bold'))
-        title_label.pack(side=LEFT)
+        title_label = Label(header_frame, text='📦 จัดการข้อมูลสินค้า', font=('Arial', 18, 'bold'))
+        title_label.pack(side=TOP)
         
         # ปุ่ม Import CSV
         btn_import = ttk.Button(header_frame, text='📂 นำเข้า CSV', command=self.import_csv)

@@ -166,7 +166,7 @@ class ReceiptPrinter:
             
             # ชื่อร้าน
             if self.thai_font_available:
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>ร้าน......... POS</b></font>", title_style))
+                elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>ร้านค้าสำหรับ..POS..</b></font>", title_style))
                 elements.append(Paragraph(f"<font name='{self.thai_font_name}'>29/25 หมู่2 ตำบลสะเดียง เพชรบูรณ์ 67000</font>", subtitle_style))
                 elements.append(Paragraph(f"<font name='{self.thai_font_name}'>โทร: 090-951-3031 | อีเมล: Phattananbaosin@shop.com</font>", subtitle_style))
             else:
@@ -275,7 +275,7 @@ class ReceiptPrinter:
             table = Table(table_data, colWidths=[7.5*cm, 2.5*cm, 3.5*cm, 3.5*cm])
             table.setStyle(TableStyle([
                 # Header - สีน้ำเงินสวย
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0d9488')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('FONTSIZE', (0, 0), (-1, 0), 14),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
@@ -283,7 +283,7 @@ class ReceiptPrinter:
                 
                 # Data rows - สลับสี
                 ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f1f5f9')]),
-                ('LINEBELOW', (0, 0), (-1, 0), 2.5, colors.HexColor('#1e40af')),
+                ('LINEBELOW', (0, 0), (-1, 0), 2.5, colors.HexColor('#0d9488')),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 10),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 10),
@@ -298,7 +298,7 @@ class ReceiptPrinter:
             if self.thai_font_available:
                 summary_label = ParagraphStyle('ThaiSumLabel', parent=info_label_style, fontSize=15, alignment=TA_RIGHT, fontName=self.thai_font_name)
                 summary_value = ParagraphStyle('ThaiSumValue', parent=info_value_style, fontSize=15, alignment=TA_RIGHT, fontName=self.thai_font_name)
-                summary_total = ParagraphStyle('ThaiTotal', parent=info_value_style, fontSize=20, alignment=TA_RIGHT, textColor=colors.HexColor('#1e40af'), fontName=self.thai_font_name)
+                summary_total = ParagraphStyle('ThaiTotal', parent=info_value_style, fontSize=20, alignment=TA_RIGHT, textColor=colors.HexColor('#0d9488'), fontName=self.thai_font_name)
                 
                 summary_data = [
                     [Paragraph(f"<font name='{self.thai_font_name}'><b>ยอดรวม</b></font>", summary_label), 
@@ -317,7 +317,7 @@ class ReceiptPrinter:
             else:
                 summary_label = ParagraphStyle('EngSumLabel', parent=info_label_style, fontSize=15, alignment=TA_RIGHT)
                 summary_value = ParagraphStyle('EngSumValue', parent=info_value_style, fontSize=15, alignment=TA_RIGHT)
-                summary_total = ParagraphStyle('EngTotal', parent=info_value_style, fontSize=20, alignment=TA_RIGHT, textColor=colors.HexColor('#1e40af'))
+                summary_total = ParagraphStyle('EngTotal', parent=info_value_style, fontSize=20, alignment=TA_RIGHT, textColor=colors.HexColor('#0d9488'))
                 
                 summary_data = [
                     [Paragraph("<b>Subtotal</b>", summary_label), Paragraph(f"<b>{transaction_data['subtotal']:,.2f} ฿</b>", summary_value)],
