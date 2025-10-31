@@ -94,7 +94,7 @@ class SalesTab(Frame):
         # ตารางขาย
         self.create_sales_table()
         
-        # ⭐ ปุ่มล้างตะกร้า
+        # ⭐ ปุ่มล้างตะกร้าและลบสินค้าที่เลือก
         self.create_clear_button()
     
         # สรุปยอดขาย
@@ -183,9 +183,27 @@ class SalesTab(Frame):
         self.table_sales.tag_configure('evenrow', background='#ffffff')
     
     def create_clear_button(self):
-        """สร้างปุ่มล้างตะกร้า"""
+        """สร้างปุ่มล้างตะกร้าและปุ่มลบสินค้าที่เลือก"""
         clear_frame = Frame(self.F2, bg='#ffffff')
         clear_frame.pack(pady=5, fill=X)
+        
+        # ปุ่มลบสินค้าที่เลือก
+        self.btn_delete_item = Button(
+            clear_frame,
+            text='❌ ลบสินค้าที่เลือก',
+            command=self.delete_selected_item,
+            bg='#ff9800',
+            fg='white',
+            font=('Arial', 10, 'bold'),
+            cursor='hand2',
+            relief=FLAT,
+            pady=3
+        )
+        self.btn_delete_item.pack(side=LEFT, fill=X, expand=True, padx=(0, 5))
+        
+        # Hover effect
+        self.btn_delete_item.bind('<Enter>', lambda e: e.widget.config(bg='#f57c00'))
+        self.btn_delete_item.bind('<Leave>', lambda e: e.widget.config(bg='#ff9800'))
         
         # ปุ่มล้างตะกร้า
         self.btn_clear_cart = Button(
@@ -199,11 +217,82 @@ class SalesTab(Frame):
             relief=FLAT,
             pady=3
         )
-        self.btn_clear_cart.pack(fill=X)
+        self.btn_clear_cart.pack(side=RIGHT, fill=X, expand=True, padx=(5, 0))
         
         # Hover effect
         self.btn_clear_cart.bind('<Enter>', lambda e: e.widget.config(bg='#d32f2f'))
         self.btn_clear_cart.bind('<Leave>', lambda e: e.widget.config(bg='#f44336'))
+    
+    def delete_selected_item(self):
+        """ลบสินค้าที่เลือกในตาราง"""
+        try:
+            # ตรวจสอบว่ามีการเลือกสินค้าหรือไม่
+            selected = self.table_sales.selection()
+            
+            if not selected:
+                messagebox.showwarning(
+                    "ไม่ได้เลือกสินค้า",
+                    "กรุณาเลือกสินค้าที่ต้องการลบในตาราง"
+                )
+                return
+            
+            # ดึงข้อมูลสินค้าที่เลือก
+            selected_item = self.table_sales.item(selected[0])
+            values = selected_item['values']
+            barcode = str(values[0])  # แปลง barcode เป็น string เพื่อให้ตรงกับ key ใน cart
+            product_name = values[1]
+            quantity = values[3]
+            total = values[4]
+            
+            # Debug: แสดงข้อมูลที่กำลังจะลบ
+            print(f"Attempting to delete - Barcode: {barcode}, Type: {type(barcode)}")
+            print(f"Cart keys: {list(self.cart.keys())}")
+            
+            # ยืนยันการลบ
+            confirm = messagebox.askyesno(
+                "⚠️ ยืนยันการลบสินค้า",
+                f"คุณต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?\n\n"
+                f"📦 สินค้า: {product_name}\n"
+                f"🔢 Barcode: {barcode}\n"
+                f"📊 จำนวน: {quantity} ชิ้น\n"
+                f"💰 มูลค่า: {total} บาท",
+                icon='warning'
+            )
+            
+            if confirm:
+                # ลบสินค้าออกจาก cart
+                if barcode in self.cart:
+                    del self.cart[barcode]
+                    print(f"✅ Successfully deleted item with barcode: {barcode}")
+                    
+                    # ลบรายการออกจากตาราง
+                    self.table_sales.delete(selected[0])
+                    
+                    # อัปเดตตารางและสรุปยอดใหม่
+                    self.update_table_with_totals()
+                    
+                    # แสดงข้อความสำเร็จ
+                    self.v_last_barcode.set(f"🗑️ ลบสินค้าแล้ว: {product_name}")
+                    self.last_barcode_frame.config(bg='#fff9c4')
+                    self.after(2000, lambda: self.reset_barcode_label())
+                    
+                    # Focus กลับไปที่ search box
+                    self.search.focus()
+                    
+                    print(f"Cart after deletion: {list(self.cart.keys())}")
+                else:
+                    print(f"❌ Barcode {barcode} not found in cart")
+                    messagebox.showerror(
+                        "เกิดข้อผิดพลาด",
+                        f"ไม่พบสินค้านี้ในตะกร้า\nBarcode: {barcode}"
+                    )
+                    
+        except Exception as e:
+            print(f"Error in delete_selected_item: {str(e)}")
+            messagebox.showerror(
+                "เกิดข้อผิดพลาด",
+                f"ไม่สามารถลบสินค้าได้\n\nรายละเอียด: {str(e)}"
+            )
     
     def clear_cart_confirm(self):
         """ล้างตะกร้าสินค้าทั้งหมด (พร้อมยืนยัน)"""
