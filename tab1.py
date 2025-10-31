@@ -208,7 +208,7 @@ class SalesTab(Frame):
         # ปุ่มล้างตะกร้า
         self.btn_clear_cart = Button(
             clear_frame,
-            text='🗑️ ล้างตะกร้า',
+            text='🗑️ล้างตะกร้า',
             command=self.clear_cart_confirm,
             bg='#f44336',
             fg='white',

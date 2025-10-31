@@ -6,13 +6,13 @@ from elements import SalesTab, ProductTab, DashboardTab
 
 # Color Scheme
 COLORS = {
-    'header': '#1e40af',        # Bright Blue - Header, ปุ่มหลัก
-    'sidebar': '#546e7a',       # Blue Gray - Sidebar, Panel
-    'background': '#ffffff',    # Light Blue Gray - พื้นหลังหลัก
-    'accent': '#f0f0f0',        # Light Blue - ปุ่มเน้น, Highlights
+    'header': '#1e40af',        # Header, ปุ่มหลัก
+    'sidebar': '#546e7a',       # Sidebar, Panel
+    'background': '#ffffff',    #  พื้นหลังหลัก
+    'accent': '#f0f0f0',        # ปุ่มเน้น, Highlights
     'text_dark': '#263238',     # ข้อความเข้ม
     'text_light': '#ffffff',    # ข้อความสว่าง
-    'hover': '#039be5',         # Darker Blue - สีเมื่อ hover
+    'hover': '#039be5',         # สีเมื่อ hover
     'border': '#64b5f6',        # Light Blue Border
     'border_dark': '#1976d2'    # Dark Blue Border
 }
