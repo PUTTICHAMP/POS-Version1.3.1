@@ -18,7 +18,7 @@ COLORS = {
     'card_bg': '#ffffff',       # White - Card Background
     'success': '#10b981',       # Emerald-500 - Success
     'warning': '#f59e0b',       # Amber-500 - Warning
-    'error': '#ef4444',         # Red-500 - Error
+    'error': "#7A0707",         # Red-500 - Error
     'muted': "#f2f5f9"          # Slate-400 - Muted Text
 }
 # Import แต่ละแท็บ

@@ -65,10 +65,10 @@ class SalesTab(Frame):
         
         # ⭐ สร้าง Frame พร้อม Canvas และ Scrollbar สำหรับปุ่มสินค้า
         product_container = Frame(self, bg='#ffffff', relief=RIDGE, bd=2)
-        product_container.place(x=65, y=60, width=628, height=500)
+        product_container.place(x=65, y=60, width=628, height=588)
         
         # สร้าง Canvas
-        self.product_canvas = Canvas(product_container, bg='#f0f0f0', highlightthickness=0)
+        self.product_canvas = Canvas(product_container, bg="#ffffff", highlightthickness=0)
         
         # สร้าง Scrollbar แนวตั้ง
         v_scrollbar = ttk.Scrollbar(product_container, orient=VERTICAL, 
@@ -393,7 +393,7 @@ class SalesTab(Frame):
         Label(self.F3, text="VAT 7%:", font=(None, 12)).grid(row=1, column=0, sticky='e', padx=5)
         Label(self.F3, textvariable=self.v_vat, font=(None, 12, 'bold'), width=15, anchor='e').grid(row=1, column=1, sticky='e', padx=5)
         
-        ttk.Separator(self.F3, orient='horizontal').grid(row=2, column=0, columnspan=2, sticky='ew', pady=5)
+        ttk.Separator(self.F3, orient='horizontal').grid(row=2, column=0, columnspan=2, sticky='ew', pady=3)
         
         Label(self.F3, text="รวมทั้งหมด (Grand Total):", font=(None, 14, 'bold')).grid(row=3, column=0, sticky='e', padx=5)
         Label(self.F3, textvariable=self.v_grand_total, font=(None, 14, 'bold'), fg='red', width=15, anchor='e').grid(row=3, column=1, sticky='e', padx=5)
