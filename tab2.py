@@ -1,6 +1,7 @@
 from tkinter import *
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from basicsql import *
+import csv
 
 class ProductTab(Frame):
     def __init__(self, parent, sales_tab=None, dashboard_tab=None, profit_tab=None):
@@ -35,9 +36,20 @@ class ProductTab(Frame):
         self.create_widgets()
         
     def create_widgets(self):
-        # หัวข้อ
-        title_label = Label(self, text='จัดการข้อมูลสินค้า', font=('Arial', 18, 'bold'))
-        title_label.pack(pady=10)
+        # หัวข้อและปุ่ม Import
+        header_frame = Frame(self)
+        header_frame.pack(pady=10, fill=X, padx=20)
+        
+        title_label = Label(header_frame, text='จัดการข้อมูลสินค้า', font=('Arial', 18, 'bold'))
+        title_label.pack(side=LEFT)
+        
+        # ปุ่ม Import CSV
+        btn_import = ttk.Button(header_frame, text='📂 นำเข้า CSV', command=self.import_csv)
+        btn_import.pack(side=RIGHT, padx=5)
+        
+        # ปุ่ม Download Template
+        btn_template = ttk.Button(header_frame, text='📄 ดาวน์โหลด Template', command=self.download_template)
+        btn_template.pack(side=RIGHT, padx=5)
         
         # สร้าง main container
         main_container = Frame(self)
@@ -186,6 +198,112 @@ class ProductTab(Frame):
         button_frame.grid_columnconfigure(0, weight=1)
         button_frame.grid_columnconfigure(1, weight=1)
         
+    def import_csv(self):
+        """นำเข้าข้อมูลจากไฟล์ CSV"""
+        file_path = filedialog.askopenfilename(
+            title="เลือกไฟล์ CSV",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+        )
+        
+        if not file_path:
+            return
+        
+        try:
+            success_count = 0
+            error_count = 0
+            error_details = []
+            
+            with open(file_path, 'r', encoding='utf-8-sig') as file:
+                csv_reader = csv.DictReader(file)
+                
+                # ตรวจสอบ header ที่จำเป็น
+                required_fields = ['barcode', 'title', 'price', 'cost', 'quantity', 'unit', 'category', 'reorder_point']
+                headers = [h.lower().strip() for h in csv_reader.fieldnames]
+                
+                missing_fields = [f for f in required_fields if f not in headers]
+                if missing_fields:
+                    messagebox.showerror("Error", f"ไฟล์ CSV ขาดคอลัมน์: {', '.join(missing_fields)}")
+                    return
+                
+                # อ่านข้อมูลและเพิ่มลงฐานข้อมูล
+                for row_num, row in enumerate(csv_reader, start=2):
+                    try:
+                        # ทำความสะอาดข้อมูล
+                        barcode = row.get('barcode', '').strip()
+                        title = row.get('title', '').strip()
+                        price = float(row.get('price', '0').strip())
+                        cost = float(row.get('cost', '0').strip())
+                        quantity = int(row.get('quantity', '0').strip())
+                        unit = row.get('unit', 'ชิ้น').strip()
+                        category = row.get('category', '').strip()
+                        reorder_point = int(row.get('reorder_point', '1').strip())
+                        supplier = row.get('supplier', '').strip()
+                        
+                        # ตรวจสอบข้อมูลที่จำเป็น
+                        if not all([barcode, title, price, cost, quantity, unit, category]):
+                            error_details.append(f"แถว {row_num}: ข้อมูลไม่ครบถ้วน")
+                            error_count += 1
+                            continue
+                        
+                        # เพิ่มข้อมูลลงฐานข้อมูล
+                        insert_product(barcode, title, price, cost, quantity, unit, category, reorder_point, supplier)
+                        success_count += 1
+                        
+                    except ValueError as e:
+                        error_details.append(f"แถว {row_num}: ข้อมูลตัวเลขไม่ถูกต้อง ({str(e)})")
+                        error_count += 1
+                    except Exception as e:
+                        error_details.append(f"แถว {row_num}: {str(e)}")
+                        error_count += 1
+            
+            # แสดงผลลัพธ์
+            result_message = f"นำเข้าข้อมูลสำเร็จ: {success_count} รายการ"
+            if error_count > 0:
+                result_message += f"\nมีข้อผิดพลาด: {error_count} รายการ"
+                if len(error_details) <= 10:
+                    result_message += "\n\n" + "\n".join(error_details)
+                else:
+                    result_message += "\n\n" + "\n".join(error_details[:10]) + f"\n... และอีก {len(error_details)-10} ข้อผิดพลาด"
+            
+            messagebox.showinfo("Import CSV", result_message)
+            
+            # อัปเดตตารางและแท็บอื่นๆ
+            self.update_table_product()
+            self.refresh_other_tabs()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"เกิดข้อผิดพลาดในการอ่านไฟล์: {str(e)}")
+    
+    def download_template(self):
+        """ดาวน์โหลดไฟล์ Template CSV"""
+        file_path = filedialog.asksaveasfilename(
+            title="บันทึก Template CSV",
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            initialfile="product_template.csv"
+        )
+        
+        if not file_path:
+            return
+        
+        try:
+            with open(file_path, 'w', newline='', encoding='utf-8-sig') as file:
+                writer = csv.writer(file)
+                
+                # เขียน header
+                headers = ['barcode', 'title', 'price', 'cost', 'quantity', 'unit', 'category', 'reorder_point', 'supplier']
+                writer.writerow(headers)
+                
+                # เขียนตัวอย่างข้อมูล
+                writer.writerow(['0001', 'สินค้าตัวอย่าง 1', '100', '80', '50', 'ชิ้น', 'อาหาร', '10', 'บริษัท ABC'])
+                writer.writerow(['0002', 'สินค้าตัวอย่าง 2', '200', '150', '30', 'กล่อง', 'เครื่องดื่ม', '5', 'บริษัท XYZ'])
+                writer.writerow(['0003', 'สินค้าตัวอย่าง 3', '50', '35', '100', 'ถุง', 'ของใช้', '20', ''])
+            
+            messagebox.showinfo("Success", f"บันทึก Template สำเร็จที่:\n{file_path}")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"เกิดข้อผิดพลาดในการบันทึกไฟล์: {str(e)}")
+    
     def update_table_product(self):
         """อัปเดตข้อมูลในตารางสินค้า"""
         self.table_product.delete(*self.table_product.get_children())

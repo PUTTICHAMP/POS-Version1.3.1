@@ -1,7 +1,8 @@
 from tkinter import *
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from basicsql import *
 import json
+import csv
 from datetime import datetime, timedelta
 from tkcalendar import DateEntry
 
@@ -10,6 +11,9 @@ class ProfitTab(Frame):
         super().__init__(parent)
         self.pack(fill=BOTH, expand=True)
         
+        # เก็บข้อมูลสำหรับ Export
+        self.current_data = []
+        
         # สร้าง GUI
         self.create_widgets()
         
@@ -17,8 +21,16 @@ class ProfitTab(Frame):
         FONT1 = (None, 20)
         FONT2 = (None, 14)
         
+        # Frame สำหรับหัวข้อและปุ่ม Export
+        header_frame = Frame(self)
+        header_frame.pack(fill=X, pady=10, padx=20)
+        
         # หัวข้อ
-        Label(self, text='Profit Analysis - วิเคราะห์กำไร', font=('Arial', 18, 'bold')).pack(pady=10)
+        Label(header_frame, text='Profit Analysis - วิเคราะห์กำไร', font=('Arial', 18, 'bold')).pack(side=LEFT)
+        
+        # ปุ่ม Export
+        ttk.Button(header_frame, text='📊 Export CSV', command=self.export_to_csv).pack(side=RIGHT, padx=5)
+        ttk.Button(header_frame, text='📈 Export สรุป', command=self.export_summary_csv).pack(side=RIGHT, padx=5)
         
         # Frame หลัก
         main_frame = Frame(self)
@@ -170,9 +182,11 @@ class ProfitTab(Frame):
             total_cost = 0
             total_profit = 0
             
-            # เคลียร์ตาราง
+            # เคลียร์ตารางและข้อมูล
             for item in self.profit_table.get_children():
                 self.profit_table.delete(item)
+            
+            self.current_data = []  # เคลียร์ข้อมูลเก่า
                 
             # วิเคราะห์แต่ละ transaction
             for transaction in transactions:
@@ -206,6 +220,21 @@ class ProfitTab(Frame):
                         total_cost += total_item_cost
                         total_profit += profit
                         
+                        # เก็บข้อมูลสำหรับ Export
+                        self.current_data.append({
+                            'date': trans_date_short,
+                            'transaction_id': trans_id,
+                            'barcode': barcode,
+                            'product': title,
+                            'quantity': quantity,
+                            'price': price,
+                            'cost': cost,
+                            'revenue': revenue,
+                            'total_cost': total_item_cost,
+                            'profit': profit,
+                            'profit_margin': profit_margin
+                        })
+                        
                         # เพิ่มลงตาราง
                         self.profit_table.insert('', 'end', values=[
                             trans_date_short, trans_id, title, quantity,
@@ -220,6 +249,14 @@ class ProfitTab(Frame):
             # คำนวณอัตรากำไรรวม
             overall_margin = (total_profit / total_sales * 100) if total_sales > 0 else 0
             
+            # เก็บข้อมูลสรุปสำหรับ Export
+            self.summary_data = {
+                'total_sales': total_sales,
+                'total_cost': total_cost,
+                'total_profit': total_profit,
+                'profit_margin': overall_margin
+            }
+            
             # อัปเดตข้อมูลสรุป
             self.v_total_sales.set(f"{total_sales:,.2f} บาท")
             self.v_total_cost.set(f"{total_cost:,.2f} บาท")
@@ -228,3 +265,119 @@ class ProfitTab(Frame):
             
         except Exception as e:
             messagebox.showerror("Error", f"เกิดข้อผิดพลาดในการโหลดข้อมูล: {str(e)}")
+    
+    def export_to_csv(self):
+        """Export รายงานรายละเอียดเป็น CSV"""
+        if not self.current_data:
+            messagebox.showwarning("Warning", "ไม่มีข้อมูลสำหรับ Export")
+            return
+        
+        # เลือกที่บันทึกไฟล์
+        start_date = self.start_date.get_date().strftime('%Y%m%d')
+        end_date = self.end_date.get_date().strftime('%Y%m%d')
+        default_filename = f"profit_report_{start_date}_to_{end_date}.csv"
+        
+        file_path = filedialog.asksaveasfilename(
+            title="บันทึกรายงาน CSV",
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            initialfile=default_filename
+        )
+        
+        if not file_path:
+            return
+        
+        try:
+            with open(file_path, 'w', newline='', encoding='utf-8-sig') as file:
+                writer = csv.writer(file)
+                
+                # หัวข้อรายงาน
+                writer.writerow(['รายงานการวิเคราะห์กำไร (Profit Analysis Report)'])
+                writer.writerow([f'ช่วงวันที่: {self.start_date.get_date().strftime("%d/%m/%Y")} - {self.end_date.get_date().strftime("%d/%m/%Y")}'])
+                writer.writerow([f'วันที่ออกรายงาน: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}'])
+                writer.writerow([])  # บรรทัดว่าง
+                
+                # ข้อมูลสรุป
+                writer.writerow(['สรุปภาพรวม'])
+                writer.writerow(['รายการ', 'จำนวนเงิน (บาท)'])
+                writer.writerow(['ยอดขายรวม', f"{self.summary_data['total_sales']:,.2f}"])
+                writer.writerow(['ต้นทุนรวม', f"{self.summary_data['total_cost']:,.2f}"])
+                writer.writerow(['กำไรสุทธิ', f"{self.summary_data['total_profit']:,.2f}"])
+                writer.writerow(['อัตรากำไร (%)', f"{self.summary_data['profit_margin']:.2f}"])
+                writer.writerow([])  # บรรทัดว่าง
+                
+                # รายละเอียดการขาย
+                writer.writerow(['รายละเอียดการขายแต่ละรายการ'])
+                writer.writerow(['วันที่', 'Transaction ID', 'Barcode', 'ชื่อสินค้า', 'จำนวน', 
+                               'ราคาขาย', 'ต้นทุน', 'รายได้', 'ต้นทุนรวม', 'กำไร', 'อัตรากำไร(%)'])
+                
+                for data in self.current_data:
+                    writer.writerow([
+                        data['date'],
+                        data['transaction_id'],
+                        data['barcode'],
+                        data['product'],
+                        data['quantity'],
+                        f"{data['price']:.2f}",
+                        f"{data['cost']:.2f}",
+                        f"{data['revenue']:.2f}",
+                        f"{data['total_cost']:.2f}",
+                        f"{data['profit']:.2f}",
+                        f"{data['profit_margin']:.2f}"
+                    ])
+            
+            messagebox.showinfo("Success", f"Export รายงานสำเร็จ!\n\nบันทึกที่: {file_path}\nจำนวน: {len(self.current_data)} รายการ")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"เกิดข้อผิดพลาดในการ Export: {str(e)}")
+    
+    def export_summary_csv(self):
+        """Export เฉพาะข้อมูลสรุปเป็น CSV"""
+        if not hasattr(self, 'summary_data'):
+            messagebox.showwarning("Warning", "ไม่มีข้อมูลสำหรับ Export")
+            return
+        
+        # เลือกที่บันทึกไฟล์
+        start_date = self.start_date.get_date().strftime('%Y%m%d')
+        end_date = self.end_date.get_date().strftime('%Y%m%d')
+        default_filename = f"profit_summary_{start_date}_to_{end_date}.csv"
+        
+        file_path = filedialog.asksaveasfilename(
+            title="บันทึกรายงานสรุป CSV",
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            initialfile=default_filename
+        )
+        
+        if not file_path:
+            return
+        
+        try:
+            with open(file_path, 'w', newline='', encoding='utf-8-sig') as file:
+                writer = csv.writer(file)
+                
+                # หัวข้อรายงาน
+                writer.writerow(['รายงานสรุปกำไร (Profit Summary Report)'])
+                writer.writerow([f'ช่วงวันที่: {self.start_date.get_date().strftime("%d/%m/%Y")} - {self.end_date.get_date().strftime("%d/%m/%Y")}'])
+                writer.writerow([f'วันที่ออกรายงาน: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}'])
+                writer.writerow([])  # บรรทัดว่าง
+                
+                # ข้อมูลสรุป
+                writer.writerow(['รายการ', 'จำนวนเงิน (บาท)', 'หมายเหตุ'])
+                writer.writerow(['ยอดขายรวม', f"{self.summary_data['total_sales']:,.2f}", 'รายได้ทั้งหมดจากการขายสินค้า'])
+                writer.writerow(['ต้นทุนรวม', f"{self.summary_data['total_cost']:,.2f}", 'ต้นทุนสินค้าที่ขายทั้งหมด'])
+                writer.writerow(['กำไรสุทธิ', f"{self.summary_data['total_profit']:,.2f}", 'ยอดขาย - ต้นทุน'])
+                writer.writerow(['อัตรากำไร', f"{self.summary_data['profit_margin']:.2f}%", '(กำไร/ยอดขาย) x 100'])
+                writer.writerow([])  # บรรทัดว่าง
+                
+                # สถิติเพิ่มเติม
+                if self.current_data:
+                    writer.writerow(['สถิติเพิ่มเติม'])
+                    writer.writerow(['จำนวนรายการขายทั้งหมด', len(self.current_data)])
+                    writer.writerow(['รายได้เฉลี่ยต่อรายการ', f"{self.summary_data['total_sales'] / len(self.current_data):,.2f}"])
+                    writer.writerow(['กำไรเฉลี่ยต่อรายการ', f"{self.summary_data['total_profit'] / len(self.current_data):,.2f}"])
+            
+            messagebox.showinfo("Success", f"Export รายงานสรุปสำเร็จ!\n\nบันทึกที่: {file_path}")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"เกิดข้อผิดพลาดในการ Export: {str(e)}")

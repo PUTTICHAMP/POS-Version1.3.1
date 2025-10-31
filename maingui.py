@@ -16,7 +16,6 @@ COLORS = {
     'border': '#64b5f6',        # Light Blue Border
     'border_dark': '#1976d2'    # Dark Blue Border
 }
-
 # Import แต่ละแท็บ
 try:
     from tab1 import SalesTab
