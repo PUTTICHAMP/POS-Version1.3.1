@@ -158,7 +158,7 @@ def AboutMenu(event=None):
     header_frame.pack_propagate(False)
     
     Label(header_frame, 
-          text='โปรแกรมสำหรับ POS',
+          text='โปรแกรมสำหรับ POS - Point of Sale System',
           bg=COLORS['header'],
           fg=COLORS['text_light'],
           font=('Helvetica', 16, 'bold')).pack(pady=15)
