@@ -65,7 +65,7 @@ class SalesTab(Frame):
         
         # ⭐ สร้าง Frame พร้อม Canvas และ Scrollbar สำหรับปุ่มสินค้า
         product_container = Frame(self, bg='#ffffff', relief=RIDGE, bd=2)
-        product_container.place(x=65, y=60, width=628, height=588)
+        product_container.place(x=65, y=60, width=618, height=588)
         
         # สร้าง Canvas
         self.product_canvas = Canvas(product_container, bg="#ffffff", highlightthickness=0)
