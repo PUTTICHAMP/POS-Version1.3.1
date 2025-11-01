@@ -1,4 +1,4 @@
-# receipt_printer.py - Modern Design Version
+# receipt_printer.py - Modern Design Version with Shop Settings Integration
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -11,13 +11,38 @@ from reportlab.graphics.shapes import Drawing, Rect, Line
 from reportlab.graphics import renderPDF
 from datetime import datetime
 import os
+import json
 
 class ReceiptPrinter:
     def __init__(self):
         self.thai_font_available = False
         self.thai_font_name = 'THFont'
+        self.shop_settings = self.load_shop_settings()  # โหลดข้อมูลร้าน
         self.setup_fonts()
         
+    def load_shop_settings(self):
+        """โหลดข้อมูลร้านค้าจากไฟล์"""
+        settings_file = "shop_settings.json"
+        default_settings = {
+            'shop_name': 'ร้านค้าสำหรับ..POS..',
+            'address': '29/25 หมู่2 ตำบลสะเดียง เพชรบูรณ์ 67000',
+            'phone': '090-951-3031',
+            'email': 'Phattananbaosin@shop.com'
+        }
+        
+        try:
+            if os.path.exists(settings_file):
+                with open(settings_file, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                    print(f"✅ โหลดข้อมูลร้านค้าจาก {settings_file}")
+                    return settings
+            else:
+                print(f"⚠️ ไม่พบไฟล์ {settings_file} - ใช้ข้อมูลเริ่มต้น")
+                return default_settings
+        except Exception as e:
+            print(f"❌ Error loading shop settings: {e}")
+            return default_settings
+    
     def setup_fonts(self):
         """ตั้งค่าฟอนต์ภาษาไทย"""
         try:
@@ -58,8 +83,11 @@ class ReceiptPrinter:
         return d
             
     def create_receipt(self, transaction_data, cart_items, output_filename=None):
-        """สร้างใบเสร็จ PDF สไตล์โมเดิร์น"""
+        """สร้างใบเสร็จ PDF สไตล์โมเดิร์น พร้อมข้อมูลร้านค้า"""
         try:
+            # รีโหลดข้อมูลร้านค้าทุกครั้งที่พิมพ์ใบเสร็จ
+            self.shop_settings = self.load_shop_settings()
+            
             if not output_filename:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_filename = f"receipt_{transaction_data['transaction_id']}_{timestamp}.pdf"
@@ -85,9 +113,8 @@ class ReceiptPrinter:
             elements = []
             styles = getSampleStyleSheet()
             
-            # 🎨 สร้าง Modern Styles - ขนาดใหญ่ หนา คมชัด
+            # 🎨 สร้าง Modern Styles
             if self.thai_font_available:
-                # Title - ใหญ่มาก และโดดเด่น
                 title_style = ParagraphStyle(
                     'ModernTitle',
                     parent=styles['Title'],
@@ -99,7 +126,6 @@ class ReceiptPrinter:
                     leading=34
                 )
                 
-                # Subtitle - ใหญ่ขึ้น
                 subtitle_style = ParagraphStyle(
                     'ModernSubtitle',
                     parent=styles['Normal'],
@@ -111,7 +137,6 @@ class ReceiptPrinter:
                     leading=18
                 )
                 
-                # Receipt Info - ใหญ่ขึ้น
                 info_label_style = ParagraphStyle(
                     'ModernInfoLabel',
                     parent=styles['Normal'],
@@ -132,7 +157,6 @@ class ReceiptPrinter:
                     leading=18
                 )
                 
-                # Table Header - ใหญ่ขึ้น
                 table_header_style = ParagraphStyle(
                     'ModernTableHeader',
                     parent=styles['Normal'],
@@ -143,7 +167,6 @@ class ReceiptPrinter:
                     leading=18
                 )
                 
-                # Footer - ใหญ่ขึ้น
                 footer_style = ParagraphStyle(
                     'ModernFooter',
                     parent=styles['Normal'],
@@ -161,24 +184,42 @@ class ReceiptPrinter:
                 table_header_style = ParagraphStyle('EngTableHeader', parent=styles['Normal'], fontSize=14, textColor=colors.white, alignment=TA_LEFT)
                 footer_style = ParagraphStyle('EngFooter', parent=styles['Normal'], fontSize=13, alignment=TA_CENTER, textColor=colors.HexColor('#64748b'))
             
-            # 📌 Header Section
+            # 📌 Header Section - ใช้ข้อมูลจาก shop_settings
             elements.append(Spacer(1, 5))
             
             # ชื่อร้าน
             if self.thai_font_available:
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>ร้านค้าสำหรับ..POS..</b></font>", title_style))
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'>29/25 หมู่2 ตำบลสะเดียง เพชรบูรณ์ 67000</font>", subtitle_style))
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'>โทร: 090-951-3031 | อีเมล: Phattananbaosin@shop.com</font>", subtitle_style))
+                elements.append(Paragraph(
+                    f"<font name='{self.thai_font_name}'><b>{self.shop_settings['shop_name']}</b></font>", 
+                    title_style
+                ))
+                elements.append(Paragraph(
+                    f"<font name='{self.thai_font_name}'>{self.shop_settings['address']}</font>", 
+                    subtitle_style
+                ))
+                elements.append(Paragraph(
+                    f"<font name='{self.thai_font_name}'>โทร: {self.shop_settings['phone']} | อีเมล: {self.shop_settings['email']}</font>", 
+                    subtitle_style
+                ))
             else:
-                elements.append(Paragraph("<b>Uncle Shop POS</b>", title_style))
-                elements.append(Paragraph("29/25 M2, Sadaing District, Phetchabun 67000", subtitle_style))
-                elements.append(Paragraph("Tel: 090-951-3031 | Email: Phattananbaosin@shop.com", subtitle_style))
+                elements.append(Paragraph(
+                    f"<b>{self.clean_thai_text(self.shop_settings['shop_name'])}</b>", 
+                    title_style
+                ))
+                elements.append(Paragraph(
+                    self.clean_thai_text(self.shop_settings['address']), 
+                    subtitle_style
+                ))
+                elements.append(Paragraph(
+                    f"Tel: {self.shop_settings['phone']} | Email: {self.shop_settings['email']}", 
+                    subtitle_style
+                ))
             
             elements.append(Spacer(1, 15))
             elements.append(self.create_divider(17*cm))
             elements.append(Spacer(1, 15))
             
-            # 📋 ข้อมูลใบเสร็จ - จัดเป็น 2 คอลัมน์
+            # 📋 ข้อมูลใบเสร็จ
             if self.thai_font_available:
                 info_data = [
                     [
@@ -220,7 +261,7 @@ class ReceiptPrinter:
             
             elements.append(Spacer(1, 15))
             
-            # 🛒 ตารางสินค้า - สไตล์โมเดิร์น
+            # 🛒 ตารางสินค้า
             if self.thai_font_available:
                 header_right = ParagraphStyle('ThaiHR', parent=table_header_style, alignment=TA_RIGHT, fontName=self.thai_font_name)
                 table_headers = [
@@ -271,17 +312,14 @@ class ReceiptPrinter:
                 
                 table_data.append(row)
             
-            # สร้างตาราง - สีทันสมัย
+            # สร้างตาราง
             table = Table(table_data, colWidths=[7.5*cm, 2.5*cm, 3.5*cm, 3.5*cm])
             table.setStyle(TableStyle([
-                # Header - สีน้ำเงินสวย
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0d9488')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('FONTSIZE', (0, 0), (-1, 0), 14),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 ('TOPPADDING', (0, 0), (-1, 0), 12),
-                
-                # Data rows - สลับสี
                 ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f1f5f9')]),
                 ('LINEBELOW', (0, 0), (-1, 0), 2.5, colors.HexColor('#0d9488')),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -294,7 +332,7 @@ class ReceiptPrinter:
             elements.append(table)
             elements.append(Spacer(1, 20))
             
-            # 💰 สรุปยอดเงิน - การ์ดสไตล์โมเดิร์น
+            # 💰 สรุปยอดเงิน
             if self.thai_font_available:
                 summary_label = ParagraphStyle('ThaiSumLabel', parent=info_label_style, fontSize=15, alignment=TA_RIGHT, fontName=self.thai_font_name)
                 summary_value = ParagraphStyle('ThaiSumValue', parent=info_value_style, fontSize=15, alignment=TA_RIGHT, fontName=self.thai_font_name)
@@ -349,18 +387,19 @@ class ReceiptPrinter:
             elements.append(Spacer(1, 15))
             
             if self.thai_font_available:
-                elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>ขอบคุณที่ใช้บริการ Thank you for your business : พิมพ์เมื่อ: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</b></font>", footer_style))
-                # elements.append(Paragraph(f"<font name='{self.thai_font_name}'>Thank you for your business</font>", footer_style))
-                elements.append(Spacer(1, 8))
-                #elements.append(Paragraph(f"<font name='{self.thai_font_name}'>พิมพ์เมื่อ: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</font>", footer_style))
+                elements.append(Paragraph(
+                    f"<font name='{self.thai_font_name}'><b>ขอบคุณที่ใช้บริการ | Thank you | พิมพ์เมื่อ: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</b></font>", 
+                    footer_style
+                ))
             else:
                 elements.append(Paragraph("<b>Thank you for your business</b>", footer_style))
-                elements.append(Paragraph("Have a nice day!", footer_style))
                 elements.append(Spacer(1, 8))
                 elements.append(Paragraph(f"Printed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", footer_style))
             
             # สร้าง PDF
             doc.build(elements)
+            
+            print(f"✅ ใบเสร็จถูกสร้างด้วยข้อมูล: {self.shop_settings['shop_name']}")
             
             return output_filename
             
@@ -376,7 +415,9 @@ class ReceiptPrinter:
             'มะม่วง': 'Mango', 'สับปะรด': 'Pineapple', 'มะละกอ': 'Papaya',
             'ชิ้น': 'pcs', 'ลูก': 'pieces', 'กิโลกรัม': 'kg', 'กรัม': 'g',
             'แผง': 'pack', 'ขวด': 'bottle', 'ถุง': 'bag', 'กล่อง': 'box',
-            'นม': 'Milk', 'ขนมปัง': 'Bread', 'น้ำ': 'Water', 'ข้าว': 'Rice'
+            'นม': 'Milk', 'ขนมปัง': 'Bread', 'น้ำ': 'Water', 'ข้าว': 'Rice',
+            'ร้าน': 'Shop', 'ค้า': '', 'สำหรับ': 'for', 'ตำบล': '', 
+            'หมู่': 'Moo', 'โทร': 'Tel', 'อีเมล': 'Email'
         }
         
         for thai, eng in thai_to_eng.items():
@@ -448,6 +489,7 @@ def test_receipt_printer():
         )
         print(f"✅ Modern receipt created: {filename}")
         print(f"🎨 Thai font available: {printer.thai_font_available}")
+        print(f"🏪 Shop name: {printer.shop_settings['shop_name']}")
         
     except Exception as e:
         print(f"❌ Error: {e}")
