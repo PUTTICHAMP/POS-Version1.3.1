@@ -116,6 +116,58 @@ style.configure('TEntry',
                 borderwidth=2,
                 relief='solid')
 
+##########TAB###########
+Tab = ttk.Notebook(GUI)
+Tab.pack(fill=BOTH, expand=1, padx=10, pady=10)
+
+# สร้าง Frame สำหรับแต่ละแท็บ
+T1 = ttk.Frame(Tab)
+T2 = ttk.Frame(Tab)
+T3 = ttk.Frame(Tab)
+T4 = ttk.Frame(Tab)
+T5 = ttk.Frame(Tab)  # เพิ่ม Tab5
+
+# โหลดไอคอนแท็บ (มี error handling)
+try:
+    tab_icon1 = PhotoImage(file='tab1.png')
+    tab_icon2 = PhotoImage(file='tab2.png')
+    tab_icon3 = PhotoImage(file='tab3.png')
+    tab_icon4 = PhotoImage(file='tab4.png')
+    tab_icon5 = PhotoImage(file='tab5.png')
+    
+    # เพิ่มแท็บพร้อมไอคอน
+    Tab.add(T1, text=' ระบบขายสินค้า ', image=tab_icon1, compound='left')
+    Tab.add(T2, text=' เพิ่มสินค้า ', image=tab_icon2, compound='left')
+    Tab.add(T3, text=' Dashboard', image=tab_icon3, compound='left')
+    Tab.add(T4, text='  Profit  ', image=tab_icon4, compound='left')
+    Tab.add(T5, text=' ตั้งค่าข้อมูลร้านค้า', image=tab_icon5, compound='left')
+    
+    # เก็บ reference ไว้
+    GUI.tab_icon1 = tab_icon1
+    GUI.tab_icon2 = tab_icon2
+    GUI.tab_icon3 = tab_icon3
+    GUI.tab_icon4 = tab_icon4
+    GUI.tab_icon5 = tab_icon5
+    
+except:
+    # ถ้าไม่มีไอคอน ใช้ emoji แทน
+    Tab.add(T1, text=' 💰 เมนูขาย ')
+    Tab.add(T2, text=' 📦 เพิ่มสินค้า')
+    Tab.add(T3, text=' 📊 Dashboard')
+    Tab.add(T4, text=' 💹 Profit ')
+    Tab.add(T5, text=' ⚙️ ตั้งค่าร้าน')
+    print("หมายเหตุ: ไม่พบไฟล์ไอคอน กำลังรันโดยใช้ emoji แทน")
+
+# ฟังก์ชันสำหรับสลับไปยังแท็บที่ต้องการ
+def switch_to_product_tab():
+    """สลับไปยังแท็บเพิ่มสินค้า (Tab 2)"""
+    Tab.select(T2)  # เลือก Tab 2
+    try:
+        # Focus ที่ช่อง Barcode หากมีฟังก์ชัน
+        product_tab.entries['Barcode:'].focus()
+    except:
+        pass
+
 ##########MENU###########
 menubar = Menu(GUI, 
                bg=COLORS['header'],
@@ -133,7 +185,8 @@ filemenu = Menu(menubar, tearoff=0,
                 activeforeground=COLORS['text_dark'],
                 font=('Helvetica', 10))
 menubar.add_cascade(label='File', menu=filemenu)
-filemenu.add_command(label='เปิดเมนูเพิ่มสินค้า', command=lambda: print('Add Product'))
+# เปลี่ยนจาก lambda: print('Add Product') เป็นฟังก์ชันสลับแท็บ
+filemenu.add_command(label='เปิดเมนูเพิ่มสินค้า', command=switch_to_product_tab)
 filemenu.add_command(label='ออกจากโปรแกรม', command=lambda: GUI.quit())
 
 #About Menu
@@ -218,48 +271,6 @@ menubar.add_cascade(label='About', menu=aboutmenu)
 aboutmenu.add_command(label='เกี่ยวกับโปรแกรม', command=AboutMenu)
 
 GUI.bind('<F12>', AboutMenu)
-
-##########TAB###########
-Tab = ttk.Notebook(GUI)
-Tab.pack(fill=BOTH, expand=1, padx=10, pady=10)
-
-# สร้าง Frame สำหรับแต่ละแท็บ
-T1 = ttk.Frame(Tab)
-T2 = ttk.Frame(Tab)
-T3 = ttk.Frame(Tab)
-T4 = ttk.Frame(Tab)
-T5 = ttk.Frame(Tab)  # เพิ่ม Tab5
-
-# โหลดไอคอนแท็บ (มี error handling)
-try:
-    tab_icon1 = PhotoImage(file='tab1.png')
-    tab_icon2 = PhotoImage(file='tab2.png')
-    tab_icon3 = PhotoImage(file='tab3.png')
-    tab_icon4 = PhotoImage(file='tab4.png')
-    tab_icon5 = PhotoImage(file='tab5.png')
-    
-    # เพิ่มแท็บพร้อมไอคอน
-    Tab.add(T1, text=' ระบบขายสินค้า ', image=tab_icon1, compound='left')
-    Tab.add(T2, text=' เพิ่มสินค้า ', image=tab_icon2, compound='left')
-    Tab.add(T3, text=' Dashboard', image=tab_icon3, compound='left')
-    Tab.add(T4, text='  Profit  ', image=tab_icon4, compound='left')
-    Tab.add(T5, text=' ตั้งค่าข้อมูลร้านค้า', image=tab_icon5, compound='left')
-    
-    # เก็บ reference ไว้
-    GUI.tab_icon1 = tab_icon1
-    GUI.tab_icon2 = tab_icon2
-    GUI.tab_icon3 = tab_icon3
-    GUI.tab_icon4 = tab_icon4
-    GUI.tab_icon5 = tab_icon5
-    
-except:
-    # ถ้าไม่มีไอคอน ใช้ emoji แทน
-    Tab.add(T1, text=' 💰 เมนูขาย ')
-    Tab.add(T2, text=' 📦 เพิ่มสินค้า')
-    Tab.add(T3, text=' 📊 Dashboard')
-    Tab.add(T4, text=' 💹 Profit ')
-    Tab.add(T5, text=' ⚙️ ตั้งค่าร้าน')
-    print("หมายเหตุ: ไม่พบไฟล์ไอคอน กำลังรันโดยใช้ emoji แทน")
 
 # สร้าง instance ของแต่ละแท็บ
 try:
