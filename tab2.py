@@ -81,7 +81,7 @@ class ProductTab(Frame):
         table_frame.pack(fill=BOTH, expand=True, padx=10, pady=(0, 10))
         
         # สร้าง Treeview
-        product_header = ['Barcode', 'ชื่อสินค้า', 'ราคาขาย', 'ราคาทุน', 'สต็อก', 'หน่วย', 'ประเภท', 'Reorder']
+        product_header = ['รหัสสินค้า', 'ชื่อสินค้า', 'ราคาขาย', 'ราคาทุน', 'สต็อก', 'หน่วย', 'ประเภท', 'Reorder']
         product_width = [90, 150, 80, 80, 60, 70, 90, 70]
         
         self.table_product = ttk.Treeview(table_frame, columns=product_header, 
@@ -167,7 +167,7 @@ class ProductTab(Frame):
         # ปุ่มจัดการ
         self.create_buttons(form_frame, row)
         
-        # Focus ที่ช่องบาร์โค้ด
+        # Focus ที่ช่องรหัสสินค้า
         self.entries['Barcode:'].focus()
         
     def create_buttons(self, parent, start_row):
@@ -217,7 +217,7 @@ class ProductTab(Frame):
                 csv_reader = csv.DictReader(file)
                 
                 # ตรวจสอบ header ที่จำเป็น
-                required_fields = ['barcode', 'title', 'price', 'cost', 'quantity', 'unit', 'category', 'reorder_point']
+                required_fields = ['รหัสสินค้า', 'title', 'price', 'cost', 'quantity', 'unit', 'category', 'reorder_point']
                 headers = [h.lower().strip() for h in csv_reader.fieldnames]
                 
                 missing_fields = [f for f in required_fields if f not in headers]
@@ -229,7 +229,7 @@ class ProductTab(Frame):
                 for row_num, row in enumerate(csv_reader, start=2):
                     try:
                         # ทำความสะอาดข้อมูล
-                        barcode = row.get('barcode', '').strip()
+                        barcode = row.get('รหัสสินค้า', '').strip() 
                         title = row.get('title', '').strip()
                         price = float(row.get('price', '0').strip())
                         cost = float(row.get('cost', '0').strip())
@@ -291,7 +291,7 @@ class ProductTab(Frame):
                 writer = csv.writer(file)
                 
                 # เขียน header
-                headers = ['barcode', 'title', 'price', 'cost', 'quantity', 'unit', 'category', 'reorder_point', 'supplier']
+                headers = ['รหัสสินค้า', 'title', 'price', 'cost', 'quantity', 'unit', 'category', 'reorder_point', 'supplier']
                 writer.writerow(headers)
                 
                 # เขียนตัวอย่างข้อมูล
@@ -353,7 +353,7 @@ class ProductTab(Frame):
             # อัปเดตแท็บอื่นๆ
             self.refresh_other_tabs()
                 
-            # กลับไป focus ที่ช่องบาร์โค้ด และรีเซ็ตสถานะ
+            # กลับไป focus ที่ช่องรหัสสินค้า และรีเซ็ตสถานะ
             self.entries['Barcode:'].focus()
             self.L2.config(text='เพิ่มสินค้าใหม่')
             self.btn_save.config(state='normal')  # Enable ปุ่มบันทึกหลังบันทึกสำเร็จ

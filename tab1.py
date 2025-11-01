@@ -105,11 +105,11 @@ class SalesTab(Frame):
         self.F2 = Frame(self)
         self.F2.place(x=750, y=50)
         
-        # ช่องค้นหาบาร์โค้ด พร้อมป้ายกำกับ
+        # ช่องค้นหารหัสสินค้า พร้อมป้ายกำกับ
         search_label_frame = Frame(self.F2)
         search_label_frame.pack(pady=(15, 5))
         
-        Label(search_label_frame, text="🔍 สแกนบาร์โค้ดหรือค้นหา:", 
+        Label(search_label_frame, text="🔍 ค้นหารหัสสินค้า:", 
               font=(None, 10, 'bold')).pack()
         
         self.search = ttk.Entry(self.F2, textvariable=self.v_search, font=(None, 25), width=12)
@@ -172,7 +172,7 @@ class SalesTab(Frame):
                 if len(db) >= 5 and int(db[4]) <= 0:
                     continue
                     
-                # แสดงชื่อสินค้า + บาร์โค้ด + สต็อก
+                # แสดงชื่อสินค้า + รหัสสินค้า + สต็อก
                 barcode_text = f"[{db[0]}]" if len(db) > 0 else ""
                 stock_text = f"({db[4]} {db[5] if len(db) >= 6 else 'ชิ้น'})" if len(db) >= 6 else ""
                 display_text = f"{db[1]}\n{barcode_text}\n{stock_text}"
@@ -222,7 +222,7 @@ class SalesTab(Frame):
         
         # แก้ไขชื่อ heading ให้อ่านง่ายขึ้น
         header_names = {
-            'barcode': 'บาร์โค้ด',
+            'barcode': 'รหัสสินค้า',
             'title': 'ชื่อสินค้า',
             'price': 'ราคา (฿)',
             'quantity': 'จำนวน',
@@ -312,7 +312,7 @@ class SalesTab(Frame):
                 "⚠️ ยืนยันการลบสินค้า",
                 f"คุณต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?\n\n"
                 f"📦 สินค้า: {product_name}\n"
-                f"🔢 Barcode: {barcode}\n"
+                f"🔢 รหัสสินค้า: {barcode}\n"
                 f"📊 จำนวน: {quantity} ชิ้น\n"
                 f"💰 มูลค่า: {total} บาท",
                 icon='warning'
@@ -484,7 +484,7 @@ class SalesTab(Frame):
         else:
             self.cart[b][3] = self.cart[b][3] + 1
         
-        self.v_last_barcode.set(f"✅ เพิ่มแล้ว: {t} | Barcode: {b}")
+        self.v_last_barcode.set(f"✅ เพิ่มแล้ว: {t} | รหัสสินค้า: {b}")
         self.last_barcode_frame.config(bg='#c8e6c9')
         
         self.after(2000, lambda: self.reset_barcode_label())
@@ -497,7 +497,7 @@ class SalesTab(Frame):
         self.v_last_barcode.set("พร้อมสแกนสินค้า...")
             
     def search_product(self, event=None):
-        """ค้นหาสินค้าด้วยบาร์โค้ด"""
+        """ค้นหาสินค้าด้วยรหัสสินค้า"""
         barcode = self.v_search.get()
         try:
             data = search_barcode(barcode)
@@ -533,7 +533,7 @@ class SalesTab(Frame):
                 self.last_barcode_frame.config(bg='#ffcdd2')
                 self.after(2000, lambda: self.reset_barcode_label())
                 
-                messagebox.showerror("Error", "ไม่พบสินค้าที่มีบาร์โค้ดนี้")
+                messagebox.showerror("Error", "ไม่พบสินค้าที่มีรหัสสินค้านี้")
                 self.v_search.set('')
                 self.search.focus()
         except Exception as e:

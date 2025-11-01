@@ -89,7 +89,7 @@ class DashboardTab(Frame):
         tree_frame.pack(fill=BOTH, expand=True, padx=10, pady=10)
         
         # Headers และ widths
-        headers = ['บาร์โค้ด', 'ชื่อสินค้า', 'ราคาขาย', 'ราคาทุน', 'สต็อก', 'หน่วย', 'หมวดหมู่', 'Reorder Point', 'สถานะ', 'มูลค่า']
+        headers = ['รหัสสินค้า', 'ชื่อสินค้า', 'ราคาขาย', 'ราคาทุน', 'สต็อก', 'หน่วย', 'หมวดหมู่', 'Reorder Point', 'สถานะ', 'มูลค่า']
         widths = [90, 150, 70, 70, 50, 60, 80, 80, 70, 80]
         
         self.stock_table = ttk.Treeview(tree_frame, columns=headers, show='headings', height=12)

@@ -26,7 +26,7 @@ class ProfitTab(Frame):
         header_frame.pack(fill=X, pady=10, padx=20)
         
         # หัวข้อ
-        Label(header_frame, text='💹 Profit Analysis - วิเคราะห์กำไร', font=('Arial', 18, 'bold')).pack(side=TOP)
+        Label(header_frame, text='📈 Profit Analysis - วิเคราะห์กำไร', font=('Arial', 18, 'bold')).pack(side=TOP)
         
         # ปุ่ม Export
         ttk.Button(header_frame, text='📊 Export CSV', command=self.export_to_csv).pack(side=RIGHT, padx=5)
