@@ -2,7 +2,6 @@ from tkinter import *
 from tkinter import ttk, messagebox
 import os
 from basicsql import *
-from elements import SalesTab, ProductTab, DashboardTab
 
 # Color Scheme
 COLORS = {
@@ -28,10 +27,12 @@ try:
     from tab2 import ProductTab  
     from tab3 import DashboardTab
     from tab4 import ProfitTab
-    from tab5 import ShopSettingsTab  # เพิ่ม Tab5
+    from tab5 import ShopSettingsTab
+    from tab6 import CreditManagementTab  # เพิ่ม Tab6
+    print("✅ All tabs imported successfully")
 except ImportError as e:
-    print(f"Error importing tabs: {e}")
-    print("กรุณาตรวจสอบว่าไฟล์ tab1.py, tab2.py, tab3.py, tab4.py, tab5.py อยู่ในโฟลเดอร์เดียวกัน")
+    print(f"❌ Error importing tabs: {e}")
+    print("กรุณาตรวจสอบว่าไฟล์ tab1.py - tab6.py อยู่ในโฟลเดอร์เดียวกัน")
     print("และติดตั้ง tkcalendar: pip install tkcalendar")
     exit(1)
 
@@ -46,7 +47,7 @@ x = (ws/2)-(w/2)
 y = (hs/2)-(h/2)
 
 GUI.geometry(f'{w}x{h}+{x:.0f}+{y:.0f}')
-GUI.title('โปรแกรมขายของสำหรับ POS - Version 1.3.0')  # เพิ่มเวอร์ชั่น
+GUI.title('โปรแกรมขายของสำหรับ POS - Version 1.4.0 (Credit System)')
 GUI.configure(bg=COLORS['background'])
 
 # กำหนด Style สำหรับ ttk widgets
@@ -61,13 +62,13 @@ style.configure('TNotebook',
 style.configure('TNotebook.Tab', 
                 background=COLORS['header'],
                 foreground=COLORS['text_light'],
-                padding=[35, 12],  # ปรับ padding ให้เหมาะกับ 5 แท็บ
-                font=('Helvetica', 11, 'bold'),
-                width=18)  # ลดความกว้างเล็กน้อย
+                padding=[30, 12],  # ปรับ padding ให้เหมาะกับ 6 แท็บ
+                font=('Helvetica', 10, 'bold'),
+                width=16)  # ลดความกว้างเล็กน้อย
 style.map('TNotebook.Tab',
           background=[('selected', COLORS['accent'])],
           foreground=[('selected', COLORS['text_dark'])],
-          padding=[('selected', [35, 12])],
+          padding=[('selected', [30, 12])],
           expand=[('selected', [0, 0, 0, 0])])
 
 # Style สำหรับ Frame
@@ -125,7 +126,8 @@ T1 = ttk.Frame(Tab)
 T2 = ttk.Frame(Tab)
 T3 = ttk.Frame(Tab)
 T4 = ttk.Frame(Tab)
-T5 = ttk.Frame(Tab)  # เพิ่ม Tab5
+T5 = ttk.Frame(Tab)
+T6 = ttk.Frame(Tab)  # เพิ่ม Tab6
 
 # โหลดไอคอนแท็บ (มี error handling)
 try:
@@ -134,13 +136,15 @@ try:
     tab_icon3 = PhotoImage(file='tab3.png')
     tab_icon4 = PhotoImage(file='tab4.png')
     tab_icon5 = PhotoImage(file='tab5.png')
+    tab_icon6 = PhotoImage(file='tab6.png')
     
     # เพิ่มแท็บพร้อมไอคอน
-    Tab.add(T1, text=' ระบบขายสินค้า ', image=tab_icon1, compound='left')
+    Tab.add(T1, text=' ระบบขาย ', image=tab_icon1, compound='left')
     Tab.add(T2, text=' เพิ่มสินค้า ', image=tab_icon2, compound='left')
     Tab.add(T3, text=' Dashboard', image=tab_icon3, compound='left')
-    Tab.add(T4, text='  Profit  ', image=tab_icon4, compound='left')
-    Tab.add(T5, text=' ตั้งค่าข้อมูลร้านค้า', image=tab_icon5, compound='left')
+    Tab.add(T4, text=' Profit ', image=tab_icon4, compound='left')
+    Tab.add(T5, text=' ตั้งค่าร้าน', image=tab_icon5, compound='left')
+    Tab.add(T6, text=' เครดิต', image=tab_icon6, compound='left')
     
     # เก็บ reference ไว้
     GUI.tab_icon1 = tab_icon1
@@ -148,25 +152,32 @@ try:
     GUI.tab_icon3 = tab_icon3
     GUI.tab_icon4 = tab_icon4
     GUI.tab_icon5 = tab_icon5
+    GUI.tab_icon6 = tab_icon6
+    
+    print("✅ Tab icons loaded")
     
 except:
     # ถ้าไม่มีไอคอน ใช้ emoji แทน
-    Tab.add(T1, text=' 💰 เมนูขาย ')
-    Tab.add(T2, text=' 📦 เพิ่มสินค้า')
+    Tab.add(T1, text=' 💰 ขาย ')
+    Tab.add(T2, text=' 📦 สินค้า')
     Tab.add(T3, text=' 📊 Dashboard')
     Tab.add(T4, text=' 💹 Profit ')
-    Tab.add(T5, text=' ⚙️ ตั้งค่าร้าน')
-    print("หมายเหตุ: ไม่พบไฟล์ไอคอน กำลังรันโดยใช้ emoji แทน")
+    Tab.add(T5, text=' ⚙️ ตั้งค่า')
+    Tab.add(T6, text=' 💳 เครดิต')
+    print("⚠️ Tab icons not found - using emoji")
 
 # ฟังก์ชันสำหรับสลับไปยังแท็บที่ต้องการ
 def switch_to_product_tab():
     """สลับไปยังแท็บเพิ่มสินค้า (Tab 2)"""
-    Tab.select(T2)  # เลือก Tab 2
+    Tab.select(T2)
     try:
-        # Focus ที่ช่อง Barcode หากมีฟังก์ชัน
         product_tab.entries['Barcode:'].focus()
     except:
         pass
+
+def switch_to_credit_tab():
+    """สลับไปยังแท็บเครดิต (Tab 6)"""
+    Tab.select(T6)
 
 ##########MENU###########
 menubar = Menu(GUI, 
@@ -177,7 +188,7 @@ menubar = Menu(GUI,
                font=('Helvetica', 10))
 GUI.config(menu=menubar)
 
-#File Menu
+# File Menu
 filemenu = Menu(menubar, tearoff=0,
                 bg=COLORS['sidebar'],
                 fg=COLORS['text_light'],
@@ -185,15 +196,16 @@ filemenu = Menu(menubar, tearoff=0,
                 activeforeground=COLORS['text_dark'],
                 font=('Helvetica', 10))
 menubar.add_cascade(label='File', menu=filemenu)
-# เปลี่ยนจาก lambda: print('Add Product') เป็นฟังก์ชันสลับแท็บ
 filemenu.add_command(label='เปิดเมนูเพิ่มสินค้า', command=switch_to_product_tab)
+filemenu.add_command(label='จัดการลูกค้าและเครดิต', command=switch_to_credit_tab)
+filemenu.add_separator()
 filemenu.add_command(label='ออกจากโปรแกรม', command=lambda: GUI.quit())
 
-#About Menu
+# About Menu
 def AboutMenu(event=None):
     GUI2 = Toplevel()
     w = 500
-    h = 450
+    h = 500
     
     ws = GUI.winfo_screenwidth()
     hs = GUI.winfo_screenheight()
@@ -223,18 +235,21 @@ def AboutMenu(event=None):
     try:
         uncle_icon = PhotoImage(file='Sale.png').subsample(2)
         Label(content_frame, image=uncle_icon, bg=COLORS['background']).pack(pady=10)
-        GUI2.uncle_icon = uncle_icon  # เก็บ reference ไว้
+        GUI2.uncle_icon = uncle_icon
     except:
         pass
     
-    info_text = '''Version 1.3 Beta
+    info_text = '''Version 1.4 Beta - Credit System
 
 ฟีเจอร์ใหม่:
-• แท็บ Profit Analysis
+• ระบบวางบิล (เครดิต)
+• จัดการลูกค้าและวงเงิน
+• ติดตามบิลค้างชำระ
+• ระบบแจ้งเตือนบิลเกินกำหนด
+• Profit Analysis
 • Reorder Point System
 • Supplier Management
-• Shop Settings (ตั้งค่าข้อมูลร้าน)
-• Smart Alerts
+• Shop Settings
 
 Tel: 090-951-3031
 Email: Phattananbaosin@gmail.com'''
@@ -278,41 +293,45 @@ try:
     product_tab = ProductTab(T2)
     dashboard_tab = DashboardTab(T3)
     profit_tab = ProfitTab(T4)
-    shop_settings_tab = ShopSettingsTab(T5)  # เพิ่ม Tab5
+    shop_settings_tab = ShopSettingsTab(T5)
+    credit_tab = CreditManagementTab(T6)  # เพิ่ม Tab6
     
-    # ตั้งค่า reference ระหว่างแท็บ (ใช้ try-except เพื่อรองรับทั้ง method เก่าและใหม่)
-    try:
-        sales_tab.set_references(product_tab=product_tab, dashboard_tab=dashboard_tab, 
-                               profit_tab=profit_tab, shop_settings_tab=shop_settings_tab)
-    except TypeError:
-        # ถ้า set_references ไม่รองรับ shop_settings_tab ให้ใช้แบบเก่า
-        sales_tab.set_references(product_tab=product_tab, dashboard_tab=dashboard_tab, 
-                               profit_tab=profit_tab)
-        print("⚠️ Warning: SalesTab.set_references() ไม่รองรับ shop_settings_tab parameter")
+    # ตั้งค่า reference ระหว่างแท็บ
+    sales_tab.set_references(
+        product_tab=product_tab, 
+        dashboard_tab=dashboard_tab, 
+        profit_tab=profit_tab,
+        credit_tab=credit_tab  # เพิ่ม credit_tab
+    )
     
-    try:
-        product_tab.set_references(sales_tab=sales_tab, dashboard_tab=dashboard_tab, 
-                                 profit_tab=profit_tab, shop_settings_tab=shop_settings_tab)
-    except TypeError:
-        # ถ้า set_references ไม่รองรับ shop_settings_tab ให้ใช้แบบเก่า
-        product_tab.set_references(sales_tab=sales_tab, dashboard_tab=dashboard_tab, 
-                                 profit_tab=profit_tab)
-        print("⚠️ Warning: ProductTab.set_references() ไม่รองรับ shop_settings_tab parameter")
+    product_tab.set_references(
+        sales_tab=sales_tab, 
+        dashboard_tab=dashboard_tab, 
+        profit_tab=profit_tab
+    )
     
-    print("=" * 60)
-    print("โปรแกรมสำหรับ POS Version 1.3 Beta")
-    print("เริ่มทำงานเรียบร้อย! ✓")
-    print("=" * 60)
-    print("ฟีเจอร์: Profit Analysis, Reorder Point, Supplier Management")
-    print("ฟีเจอร์ใหม่: Shop Settings - ตั้งค่าข้อมูลร้านค้า")
-    print("Color Theme: Modern Green")
-    print("=" * 60)
+    print("=" * 70)
+    print("🎉 โปรแกรมสำหรับ POS Version 1.4 Beta - Credit System")
+    print("=" * 70)
+    print("✅ เริ่มทำงานเรียบร้อย!")
+    print("=" * 70)
+    print("📋 ฟีเจอร์หลัก:")
+    print("   • ระบบขายและจัดการสต็อก")
+    print("   • Profit Analysis & Reorder Point")
+    print("   • Supplier Management")
+    print("   • Shop Settings")
+    print("   • 💳 ระบบวางบิล (เครดิต) - NEW!")
+    print("   • 👥 จัดการลูกค้าและวงเงิน - NEW!")
+    print("   • 📋 ติดตามบิลค้างชำระ - NEW!")
+    print("=" * 70)
+    print("🎨 Color Theme: Modern Teal")
+    print("=" * 70)
     
 except Exception as e:
     messagebox.showerror("Error", 
                         f"เกิดข้อผิดพลาดในการเริ่มโปรแกรม:\n{str(e)}\n\n"
                         "กรุณาตรวจสอบ:\n"
-                        "1. ไฟล์ tab1.py-tab5.py\n"
+                        "1. ไฟล์ tab1.py-tab6.py\n"
                         "2. ไฟล์ basicsql.py\n"
                         "3. ติดตั้ง tkcalendar")
     import traceback

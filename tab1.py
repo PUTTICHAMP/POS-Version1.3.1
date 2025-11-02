@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from basicsql import *
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Import สำหรับ receipt printing
 try:
@@ -23,7 +23,7 @@ except ImportError as e:
     print(f"❌ Thermal printer not available: {e}")
 
 class SalesTab(Frame):
-    def __init__(self, parent, product_tab=None, dashboard_tab=None, profit_tab=None):
+    def __init__(self, parent, product_tab=None, dashboard_tab=None, profit_tab=None, credit_tab=None):
         super().__init__(parent, bg='#ffffff')
         self.pack(fill=BOTH, expand=True)
         
@@ -31,6 +31,7 @@ class SalesTab(Frame):
         self.product_tab = product_tab
         self.dashboard_tab = dashboard_tab
         self.profit_tab = profit_tab
+        self.credit_tab = credit_tab
         
         # ตัวแปร
         self.v_title = StringVar()
@@ -52,13 +53,6 @@ class SalesTab(Frame):
 
         title_label = Label(header_frame, text='🛒 ระบบขายสินค้า', font=('Arial', 18, 'bold'))
         title_label.pack(side=TOP)
-
-        # header_frame = Frame(self, bg= '#f0f0f0', height=40)
-        # header_frame.pack(fill=X)
-        # header_frame.pack_propagate(False)
-        # Label(header_frame, text='🛒 ระบบขายสินค้า', 
-        #       font=('Arial', 18, 'bold'), 
-        #       fg='white', bg='#94a3b8').pack(pady=5)
 
         main_container = Frame(self, bg="#ffffff")
         main_container.pack(fill=BOTH, expand=True, padx=20, pady=20)
@@ -145,11 +139,9 @@ class SalesTab(Frame):
     
     def on_mousewheel(self, event):
         """เลื่อน canvas ด้วย mouse wheel"""
-        # ตรวจสอบว่า mouse อยู่เหนือ product canvas หรือไม่
         x, y = self.winfo_pointerxy()
         widget = self.winfo_containing(x, y)
         
-        # เลื่อนเฉพาะเมื่อ mouse อยู่เหนือ product area
         if widget == self.product_canvas or self.is_child_of(widget, self.product_canvas):
             self.product_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
     
@@ -167,12 +159,10 @@ class SalesTab(Frame):
         row = 0
         
         for i, db in enumerate(view_product(allfield=False), start=1):
-            # ตรวจสอบสต็อก
             try:
                 if len(db) >= 5 and int(db[4]) <= 0:
                     continue
                     
-                # แสดงชื่อสินค้า + รหัสสินค้า + สต็อก
                 barcode_text = f"[{db[0]}]" if len(db) > 0 else ""
                 stock_text = f"({db[4]} {db[5] if len(db) >= 6 else 'ชิ้น'})" if len(db) >= 6 else ""
                 display_text = f"{db[1]}\n{barcode_text}\n{stock_text}"
@@ -193,26 +183,21 @@ class SalesTab(Frame):
                     col = 0
                     row = row + 1
         
-        # กำหนดน้ำหนักคอลัมน์ให้เท่ากัน
         for i in range(4):
             self.F1.grid_columnconfigure(i, weight=1, minsize=150)
         
-        # อัปเดต scroll region
         self.F1.update_idletasks()
         self.product_canvas.configure(scrollregion=self.product_canvas.bbox("all"))
                 
     def create_sales_table(self):
-        """สร้างตารางแสดงรายการขาย พร้อมคอลัมน์ Barcode"""
-        # Style
+        """สร้างตารางแสดงรายการขาย"""
         style = ttk.Style()
         style.configure('Treeview.Heading', font=(None, 12, 'bold'))
         style.configure('Treeview', font=(None, 10))
         
-        # เพิ่มคอลัมน์ barcode
         sales_header = ['barcode', 'title', 'price', 'quantity', 'total']
         sales_width = [120, 180, 80, 80, 90]
         
-        # สร้าง Frame container สำหรับตารางและ scrollbar
         table_frame = Frame(self.F2)
         table_frame.pack(fill=BOTH, expand=True)
         
@@ -220,7 +205,6 @@ class SalesTab(Frame):
                                        show='headings', height=8)
         self.table_sales.pack(side=LEFT, fill=BOTH, expand=True)
         
-        # แก้ไขชื่อ heading ให้อ่านง่ายขึ้น
         header_names = {
             'barcode': 'รหัสสินค้า',
             'title': 'ชื่อสินค้า',
@@ -239,21 +223,18 @@ class SalesTab(Frame):
         self.table_sales.column('quantity', anchor='e')
         self.table_sales.column('total', anchor='e')
         
-        # เพิ่ม scrollbar
         scrollbar = ttk.Scrollbar(table_frame, orient=VERTICAL, command=self.table_sales.yview)
         scrollbar.pack(side=RIGHT, fill=Y)
         self.table_sales.configure(yscrollcommand=scrollbar.set)
         
-        # เพิ่ม tag สำหรับ alternating row colors
         self.table_sales.tag_configure('oddrow', background='#ffffff')
         self.table_sales.tag_configure('evenrow', background='#ffffff')
     
     def create_clear_button(self):
-        """สร้างปุ่มล้างตะกร้าและปุ่มลบสินค้าที่เลือก"""
+        """สร้างปุ่มล้างตะกร้า"""
         clear_frame = Frame(self.F2, bg='#ffffff')
         clear_frame.pack(pady=5, fill=X)
         
-        # ปุ่มลบสินค้าที่เลือก
         self.btn_delete_item = Button(
             clear_frame,
             text='❌ ลบสินค้าที่เลือก',
@@ -267,11 +248,9 @@ class SalesTab(Frame):
         )
         self.btn_delete_item.pack(side=LEFT, fill=X, expand=True, padx=(0, 5))
         
-        # Hover effect
         self.btn_delete_item.bind('<Enter>', lambda e: e.widget.config(bg='#f57c00'))
         self.btn_delete_item.bind('<Leave>', lambda e: e.widget.config(bg='#ff9800'))
         
-        # ปุ่มล้างตะกร้า
         self.btn_clear_cart = Button(
             clear_frame,
             text='🗑️ล้างตะกร้า',
@@ -285,38 +264,25 @@ class SalesTab(Frame):
         )
         self.btn_clear_cart.pack(side=RIGHT, fill=X, expand=True, padx=(5, 0))
         
-        # Hover effect
         self.btn_clear_cart.bind('<Enter>', lambda e: e.widget.config(bg='#d32f2f'))
         self.btn_clear_cart.bind('<Leave>', lambda e: e.widget.config(bg='#f44336'))
     
     def delete_selected_item(self):
-        """ลบสินค้าที่เลือกในตาราง"""
+        """ลบสินค้าที่เลือก"""
         try:
             selected = self.table_sales.selection()
             
             if not selected:
-                messagebox.showwarning(
-                    "ไม่ได้เลือกสินค้า",
-                    "กรุณาเลือกสินค้าที่ต้องการลบในตาราง"
-                )
+                messagebox.showwarning("ไม่ได้เลือกสินค้า", "กรุณาเลือกสินค้าที่ต้องการลบในตาราง")
                 return
             
             selected_item = self.table_sales.item(selected[0])
             values = selected_item['values']
             barcode = str(values[0])
             product_name = values[1]
-            quantity = values[3]
-            total = values[4]
             
-            confirm = messagebox.askyesno(
-                "⚠️ ยืนยันการลบสินค้า",
-                f"คุณต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?\n\n"
-                f"📦 สินค้า: {product_name}\n"
-                f"🔢 รหัสสินค้า: {barcode}\n"
-                f"📊 จำนวน: {quantity} ชิ้น\n"
-                f"💰 มูลค่า: {total} บาท",
-                icon='warning'
-            )
+            confirm = messagebox.askyesno("⚠️ ยืนยันการลบสินค้า",
+                f"คุณต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?\n\n📦 สินค้า: {product_name}")
             
             if confirm:
                 if barcode in self.cart:
@@ -327,56 +293,30 @@ class SalesTab(Frame):
                     self.v_last_barcode.set(f"🗑️ ลบสินค้าแล้ว: {product_name}")
                     self.last_barcode_frame.config(bg='#fff9c4')
                     self.after(2000, lambda: self.reset_barcode_label())
-                    
                     self.search.focus()
-                else:
-                    messagebox.showerror(
-                        "เกิดข้อผิดพลาด",
-                        f"ไม่พบสินค้านี้ในตะกร้า\nBarcode: {barcode}"
-                    )
                     
         except Exception as e:
-            messagebox.showerror(
-                "เกิดข้อผิดพลาด",
-                f"ไม่สามารถลบสินค้าได้\n\nรายละเอียด: {str(e)}"
-            )
+            messagebox.showerror("เกิดข้อผิดพลาด", f"ไม่สามารถลบสินค้าได้\n\n{str(e)}")
     
     def clear_cart_confirm(self):
-        """ล้างตะกร้าสินค้าทั้งหมด (พร้อมยืนยัน)"""
+        """ล้างตะกร้าสินค้า"""
         try:
-            if not self.cart or len(self.cart) == 0:
-                messagebox.showinfo(
-                    "ตะกร้าว่าง",
-                    "ไม่มีสินค้าในตะกร้า"
-                )
+            if not self.cart:
+                messagebox.showinfo("ตะกร้าว่าง", "ไม่มีสินค้าในตะกร้า")
                 return
             
             total_items = len(self.cart)
-            total_quantity = sum(item[3] for item in self.cart.values())
-            subtotal, vat, grand_total = self.calculate_totals()
             
-            confirm = messagebox.askyesno(
-                "⚠️ ยืนยันการล้างตะกร้า",
-                f"คุณต้องการลบสินค้าทั้งหมดออกจากตะกร้าใช่หรือไม่?\n\n"
-                f"📦 จำนวนรายการ: {total_items} รายการ\n"
-                f"📊 จำนวนสินค้า: {total_quantity} ชิ้น\n"
-                f"💰 มูลค่ารวม: {grand_total:,.2f} บาท\n\n"
-                f"⚠️ การดำเนินการนี้ไม่สามารถย้อนกลับได้!",
-                icon='warning'
-            )
+            confirm = messagebox.askyesno("⚠️ ยืนยันการล้างตะกร้า",
+                f"คุณต้องการลบสินค้าทั้งหมดออกจากตะกร้าใช่หรือไม่?\n\n📦 จำนวนรายการ: {total_items} รายการ")
             
             if confirm:
                 self.clear_cart()
-                
-                self.v_last_barcode.set(f"✅ ล้างตะกร้าเรียบร้อยแล้ว! ({total_items} รายการ)")
-                self.last_barcode_frame.config(bg='#ffffff')
+                self.v_last_barcode.set(f"✅ ล้างตะกร้าเรียบร้อยแล้ว!")
                 self.after(3000, lambda: self.reset_barcode_label())
                 
         except Exception as e:
-            messagebox.showerror(
-                "เกิดข้อผิดพลาด",
-                f"ไม่สามารถล้างตะกร้าได้\n\nรายละเอียด: {str(e)}"
-            )
+            messagebox.showerror("เกิดข้อผิดพลาด", f"ไม่สามารถล้างตะกร้าได้\n\n{str(e)}")
         
     def create_summary_section(self):
         """สร้างส่วนสรุปยอดขาย"""
@@ -387,7 +327,7 @@ class SalesTab(Frame):
         self.v_vat = StringVar()
         self.v_grand_total = StringVar()
         
-        Label(self.F3, text="ยอดรวม (Subtotal):", font=(None, 12)).grid(row=0, column=0, sticky='e', padx=5)
+        Label(self.F3, text="ยอดรวม:", font=(None, 12)).grid(row=0, column=0, sticky='e', padx=5)
         Label(self.F3, textvariable=self.v_subtotal, font=(None, 12, 'bold'), width=15, anchor='e').grid(row=0, column=1, sticky='e', padx=5)
         
         Label(self.F3, text="VAT 7%:", font=(None, 12)).grid(row=1, column=0, sticky='e', padx=5)
@@ -395,13 +335,13 @@ class SalesTab(Frame):
         
         ttk.Separator(self.F3, orient='horizontal').grid(row=2, column=0, columnspan=2, sticky='ew', pady=3)
         
-        Label(self.F3, text="รวมทั้งหมด (Grand Total):", font=(None, 14, 'bold')).grid(row=3, column=0, sticky='e', padx=5)
+        Label(self.F3, text="รวมทั้งหมด:", font=(None, 14, 'bold')).grid(row=3, column=0, sticky='e', padx=5)
         Label(self.F3, textvariable=self.v_grand_total, font=(None, 14, 'bold'), fg='red', width=15, anchor='e').grid(row=3, column=1, sticky='e', padx=5)
         
         self.update_summary()
         
     def create_checkout_button(self):
-        """สร้างปุ่ม Checkout และปุ่มทดสอบ"""
+        """สร้างปุ่ม Checkout"""
         self.F4 = Frame(self.F2)
         self.F4.pack(pady=5, fill=X)
         
@@ -427,7 +367,7 @@ class SalesTab(Frame):
         style.configure('Checkout.TButton', font=(None, 10, 'bold'))
         
     def calculate_totals(self):
-        """คำนวณยอดรวมทั้งหมด"""
+        """คำนวณยอดรวม"""
         subtotal = 0
         for item in self.cart.values():
             price = float(item[2])
@@ -448,7 +388,7 @@ class SalesTab(Frame):
         self.v_grand_total.set(f"{grand_total:,.2f} บาท")
         
     def update_table_with_totals(self):
-        """อัปเดตตารางพร้อมคำนวณยอดรวมแต่ละรายการ และแสดง Barcode"""
+        """อัปเดตตาราง"""
         self.table_sales.delete(*self.table_sales.get_children())
         
         for idx, item in enumerate(self.cart.values()):
@@ -484,7 +424,7 @@ class SalesTab(Frame):
         else:
             self.cart[b][3] = self.cart[b][3] + 1
         
-        self.v_last_barcode.set(f"✅ เพิ่มแล้ว: {t} | รหัสสินค้า: {b}")
+        self.v_last_barcode.set(f"✅ เพิ่มแล้ว: {t}")
         self.last_barcode_frame.config(bg='#c8e6c9')
         
         self.after(2000, lambda: self.reset_barcode_label())
@@ -492,12 +432,12 @@ class SalesTab(Frame):
         self.update_table_with_totals()
     
     def reset_barcode_label(self):
-        """รีเซ็ต label barcode กลับเป็นสีปกติ"""
+        """รีเซ็ต label barcode"""
         self.last_barcode_frame.config(bg='#e8f5e9')
         self.v_last_barcode.set("พร้อมสแกนสินค้า...")
             
     def search_product(self, event=None):
-        """ค้นหาสินค้าด้วยรหัสสินค้า"""
+        """ค้นหาสินค้า"""
         barcode = self.v_search.get()
         try:
             data = search_barcode(barcode)
@@ -520,7 +460,7 @@ class SalesTab(Frame):
                 else:
                     self.cart[data[0]][3] = self.cart[data[0]][3] + 1
                 
-                self.v_last_barcode.set(f"✅ เพิ่มแล้ว: {data[1]} | Barcode: {barcode}")
+                self.v_last_barcode.set(f"✅ เพิ่มแล้ว: {data[1]}")
                 self.last_barcode_frame.config(bg='#c8e6c9')
                 self.after(2000, lambda: self.reset_barcode_label())
                     
@@ -529,7 +469,7 @@ class SalesTab(Frame):
                 self.v_search.set('')
                 self.search.focus()
             else:
-                self.v_last_barcode.set(f"❌ ไม่พบสินค้า Barcode: {barcode}")
+                self.v_last_barcode.set(f"❌ ไม่พบสินค้า")
                 self.last_barcode_frame.config(bg='#ffcdd2')
                 self.after(2000, lambda: self.reset_barcode_label())
                 
@@ -542,7 +482,7 @@ class SalesTab(Frame):
             self.search.focus()
             
     def open_checkout_window(self):
-        """เปิดหน้าต่าง Checkout"""
+        """เปิดหน้าต่าง Checkout พร้อมตัวเลือกวางบิล"""
         if not self.cart:
             messagebox.showwarning("Warning", "ไม่มีสินค้าในตะกร้า")
             return
@@ -551,17 +491,44 @@ class SalesTab(Frame):
         
         checkout_window = Toplevel(self)
         checkout_window.title("ระบบชำระเงิน - Checkout")
-        checkout_window.geometry("600x800")
+        checkout_window.geometry("700x780")
         checkout_window.transient(self.master)
         checkout_window.grab_set()
         
         checkout_window.update_idletasks()
-        x = (checkout_window.winfo_screenwidth() // 2) - (100 // 2)
-        y = (checkout_window.winfo_screenheight() // 2) - (700 // 2)
-        checkout_window.geometry(f"700x750+{x}+{y}")
+        x = (checkout_window.winfo_screenwidth() // 2) - (50)
+        y = (checkout_window.winfo_screenheight() // 2) - (435)
+        checkout_window.geometry(f"700x780+{x}+{y}")
         
-        Label(checkout_window, text="ระบบชำระเงิน", font=(None, 20, 'bold')).pack(pady=10)
+        # Header
+        Label(checkout_window, text="ระบบชำระเงิน", font=(None, 19, 'bold')).pack(pady=5)
         
+        # เลือกประเภทการชำระ
+        payment_type_frame = LabelFrame(checkout_window, text="ประเภทการชำระเงิน", font=(None, 14))
+        payment_type_frame.pack(padx=20, pady=10, fill=X)
+        
+        payment_type = StringVar(value='CASH')
+        
+        def toggle_payment_sections():
+            """สลับการแสดงส่วนชำระเงิน/วางบิล"""
+            if payment_type.get() == 'CASH':
+                cash_frame.pack(padx=20, pady=10, fill=X, before=buttons_frame_bottom)
+                credit_frame.pack_forget()
+                change_frame.pack(padx=20, pady=10, fill=X, before=buttons_frame_bottom)
+            else:
+                cash_frame.pack_forget()
+                change_frame.pack_forget()
+                credit_frame.pack(padx=20, pady=10, fill=X, before=buttons_frame_bottom)
+                load_customers_to_combobox()
+        
+        ttk.Radiobutton(payment_type_frame, text="💵 ชำระเงินสด", 
+                       variable=payment_type, value='CASH',
+                       command=toggle_payment_sections).pack(side=LEFT, padx=20, pady=10)
+        ttk.Radiobutton(payment_type_frame, text="💳 วางบิล (เครดิต)", 
+                       variable=payment_type, value='CREDIT',
+                       command=toggle_payment_sections).pack(side=LEFT, padx=20, pady=10)
+        
+        # สรุปยอดขาย
         summary_frame = LabelFrame(checkout_window, text="สรุปยอดขาย", font=(None, 14))
         summary_frame.pack(padx=20, pady=10, fill=X)
         
@@ -569,17 +536,16 @@ class SalesTab(Frame):
         Label(summary_frame, text=f"VAT 7%: {vat:,.2f} บาท", font=(None, 12)).pack(anchor='w', padx=10, pady=2)
         Label(summary_frame, text=f"รวมทั้งหมด: {grand_total:,.2f} บาท", font=(None, 16, 'bold'), fg='red').pack(anchor='w', padx=10, pady=5)
         
-        payment_frame = LabelFrame(checkout_window, text="รับเงิน", font=(None, 14))
-        payment_frame.pack(padx=20, pady=10, fill=X)
+        # ส่วนชำระเงินสด
+        cash_frame = LabelFrame(checkout_window, text="รับเงิน", font=(None, 14))
         
-        received_var = StringVar()
-        received_var.set("0")
+        received_var = StringVar(value="0")
         
-        Label(payment_frame, text="เงินที่รับ:", font=(None, 12)).pack(anchor='w', padx=10)
-        received_label = Label(payment_frame, textvariable=received_var, font=(None, 20, 'bold'), fg='purple')
+        Label(cash_frame, text="เงินที่รับ:", font=(None, 12)).pack(anchor='w', padx=10)
+        received_label = Label(cash_frame, textvariable=received_var, font=(None, 20, 'bold'), fg='purple')
         received_label.pack(anchor='w', padx=10, pady=5)
         
-        bills_frame = Frame(payment_frame)
+        bills_frame = Frame(cash_frame)
         bills_frame.pack(padx=10, pady=10, fill=X)
         
         bills = [20, 50, 100, 500, 1000]
@@ -606,7 +572,7 @@ class SalesTab(Frame):
             
         ttk.Button(buttons_frame, text="เคลียร์", command=clear_received).grid(row=0, column=len(bills), padx=10)
         
-        manual_frame = Frame(payment_frame)
+        manual_frame = Frame(cash_frame)
         manual_frame.pack(padx=10, pady=5, fill=X)
         
         Label(manual_frame, text="หรือกรอกจำนวนเงิน:", font=(None, 12)).pack(anchor='w')
@@ -626,15 +592,14 @@ class SalesTab(Frame):
                 
         ttk.Button(manual_frame, text="เพิ่ม", command=add_manual).pack(anchor='w', pady=2)
         
-        change_frame = LabelFrame(checkout_window, text="เงินทอน", font=(None, 14))
-        change_frame.pack(padx=20, pady=10, fill=X)
+        # ส่วนเงินทอน
+        change_frame = LabelFrame(checkout_window, text="เงินทอน", font=(None, 12))
         
-        change_var = StringVar()
-        change_var.set("0.00")
+        change_var = StringVar(value="0.00")
         
         Label(change_frame, text="เงินทอน:", font=(None, 12)).pack(anchor='w', padx=10)
-        change_label = Label(change_frame, textvariable=change_var, font=(None, 24, 'bold'), fg='green')
-        change_label.pack(anchor='w', padx=10, pady=5)
+        change_label = Label(change_frame, textvariable=change_var, font=(None, 20, 'bold'), fg='green')
+        change_label.pack(anchor='w', padx=10, pady=4)
         
         def update_change():
             try:
@@ -649,51 +614,229 @@ class SalesTab(Frame):
             except:
                 change_var.set("0.00 บาท")
         
+        # ส่วนวางบิล (เครดิต)
+        credit_frame = LabelFrame(checkout_window, text="ข้อมูลลูกค้า (วางบิล)", font=(None, 14))
+        
+        Label(credit_frame, text="เลือกลูกค้า:", font=(None, 12)).pack(anchor='w', padx=10, pady=5)
+        
+        customer_var = StringVar()
+        customer_combo = ttk.Combobox(credit_frame, textvariable=customer_var, 
+                                     font=(None, 12), width=40, state='readonly')
+        customer_combo.pack(padx=10, pady=5, fill=X)
+        
+        customer_info_frame = Frame(credit_frame, bg='#f0f0f0', relief=RIDGE, bd=2)
+        customer_info_frame.pack(padx=10, pady=5, fill=X)
+        
+        customer_info_labels = {
+            'credit_limit': StringVar(value='วงเงิน: -'),
+            'credit_days': StringVar(value='ระยะเวลา: -'),
+            'total_debt': StringVar(value='ยอดหนี้: -'),
+            'available': StringVar(value='คงเหลือ: -')
+        }
+        
+        for key, var in customer_info_labels.items():
+            Label(customer_info_frame, textvariable=var, font=(None, 10), 
+                  bg='#f0f0f0').pack(anchor='w', padx=5, pady=2)
+        
+        def load_customers_to_combobox():
+            """โหลดรายชื่อลูกค้า"""
+            try:
+                customers = get_all_customers()
+                customer_list = [f"{c[0]} - {c[1]}" for c in customers]
+                customer_combo['values'] = customer_list
+                
+                if customer_list:
+                    customer_combo.current(0)
+                    update_customer_info()
+                else:
+                    messagebox.showwarning("Warning", 
+                        "ไม่มีข้อมูลลูกค้า\nกรุณาเพิ่มลูกค้าก่อนใช้งานระบบเครดิต")
+            except Exception as e:
+                print(f"Error loading customers: {e}")
+                messagebox.showerror("Error", f"ไม่สามารถโหลดข้อมูลลูกค้าได้\n{str(e)}")
+        
+        def update_customer_info(event=None):
+            """อัปเดตข้อมูลลูกค้า"""
+            try:
+                selected = customer_var.get()
+                if not selected:
+                    return
+                
+                customer_id = selected.split(' - ')[0]
+                customer = get_customer_by_id(customer_id)
+                
+                if customer:
+                    credit_limit = customer[5]
+                    credit_days = customer[6]
+                    total_debt = customer[7]
+                    available = credit_limit - total_debt
+                    
+                    customer_info_labels['credit_limit'].set(f"วงเงินเครดิต: {credit_limit:,.2f} บาท")
+                    customer_info_labels['credit_days'].set(f"ระยะเวลาชำระ: {credit_days} วัน")
+                    customer_info_labels['total_debt'].set(f"ยอดหนี้คงค้าง: {total_debt:,.2f} บาท")
+                    customer_info_labels['available'].set(f"วงเงินคงเหลือ: {available:,.2f} บาท")
+                    
+                    if available < grand_total:
+                        messagebox.showwarning("Warning", 
+                            f"⚠️ วงเงินคงเหลือไม่เพียงพอ!\n\n"
+                            f"ต้องการ: {grand_total:,.2f} บาท\n"
+                            f"คงเหลือ: {available:,.2f} บาท")
+                        
+            except Exception as e:
+                print(f"Error updating customer info: {e}")
+        
+        customer_combo.bind('<<ComboboxSelected>>', update_customer_info)
+        
+        # ปุ่มบันทึก
         buttons_frame_bottom = Frame(checkout_window)
         buttons_frame_bottom.pack(padx=20, pady=20, fill=X)
         
         def save_transaction():
             try:
-                received = float(received_var.get().replace(',', ''))
-                change = received - grand_total
-                
-                if received < grand_total:
-                    messagebox.showerror("Error", "เงินที่รับไม่เพียงพอ")
-                    return
-                
                 transaction_id = generate_transaction_id()
                 items_data = json.dumps(list(self.cart.values()))
                 
-                insert_transaction(transaction_id, subtotal, vat, grand_total, received, change, items_data)
-                
-                for item in self.cart.values():
-                    barcode = item[0]
-                    quantity = item[3]
-                    update_stock(barcode, quantity)
-                
-                checkout_window.destroy()
-                
-                self.show_print_options(transaction_id, subtotal, vat, grand_total, received, change)
+                if payment_type.get() == 'CASH':
+                    # ชำระเงินสด
+                    received = float(received_var.get().replace(',', ''))
+                    change = received - grand_total
+                    
+                    if received < grand_total:
+                        messagebox.showerror("Error", "เงินที่รับไม่เพียงพอ")
+                        return
+                    
+                    insert_transaction(transaction_id, subtotal, vat, grand_total, 
+                                     received, change, items_data)
+                    
+                    for item in self.cart.values():
+                        barcode = item[0]
+                        quantity = item[3]
+                        update_stock(barcode, quantity)
+                    
+                    checkout_window.destroy()
+                    self.show_print_options(transaction_id, subtotal, vat, grand_total, received, change)
+                    
+                else:
+                    # วางบิล (เครดิต)
+                    selected = customer_var.get()
+                    if not selected:
+                        messagebox.showerror("Error", "กรุณาเลือกลูกค้า")
+                        return
+                    
+                    customer_id = selected.split(' - ')[0]
+                    customer = get_customer_by_id(customer_id)
+                    
+                    if not customer:
+                        messagebox.showerror("Error", "ไม่พบข้อมูลลูกค้า")
+                        return
+                    
+                    # ตรวจสอบวงเงิน
+                    credit_limit = customer[5]
+                    total_debt = customer[7]
+                    available = credit_limit - total_debt
+                    
+                    if available < grand_total:
+                        confirm = messagebox.askyesno("Warning", 
+                            f"⚠️ วงเงินคงเหลือไม่เพียงพอ!\n\n"
+                            f"ต้องการ: {grand_total:,.2f} บาท\n"
+                            f"คงเหลือ: {available:,.2f} บาท\n\n"
+                            f"ต้องการดำเนินการต่อหรือไม่?")
+                        if not confirm:
+                            return
+                    
+                    # บันทึกธุรกรรม
+                    insert_transaction(transaction_id, subtotal, vat, grand_total, 0, 0, items_data)
+                    
+                    # สร้างบิลเครดิต
+                    bill_id = f"BILL{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    credit_days = customer[6]
+                    
+                    insert_credit_bill(bill_id, customer_id, transaction_id, credit_days, grand_total)
+                    
+                    # อัปเดตสต็อก
+                    for item in self.cart.values():
+                        barcode = item[0]
+                        quantity = item[3]
+                        update_stock(barcode, quantity)
+                    
+                    checkout_window.destroy()
+                    
+                    due_date = (datetime.now() + timedelta(days=credit_days)).strftime('%d/%m/%Y')
+                    
+                    messagebox.showinfo("Success", 
+                        f"✅ บันทึกการขายแบบวางบิลเรียบร้อย!\n\n"
+                        f"เลขที่บิล: {bill_id}\n"
+                        f"ลูกค้า: {customer[1]}\n"
+                        f"ยอดเงิน: {grand_total:,.2f} บาท\n"
+                        f"กำหนดชำระภายใน: {credit_days} วัน\n"
+                        f"วันที่ครบกำหนด: {due_date}")
+                    
+                    # พิมพ์ใบวางบิล
+                    self.print_credit_bill(bill_id, customer, transaction_id, 
+                                         subtotal, vat, grand_total, credit_days)
                 
                 self.clear_cart()
                 self.refresh_all_tabs()
                 
             except Exception as e:
                 messagebox.showerror("Error", f"เกิดข้อผิดพลาด: {str(e)}")
+                import traceback
+                traceback.print_exc()
         
         def cancel_checkout():
             checkout_window.destroy()
         
-        ttk.Button(buttons_frame_bottom, text="บันทึกการขาย", command=save_transaction, 
-                  style='Success.TButton').pack(side=LEFT, padx=5, fill=X, expand=True, ipady=10)
-        ttk.Button(buttons_frame_bottom, text="ยกเลิก", command=cancel_checkout,
-                  style='Cancel.TButton').pack(side=RIGHT, padx=5, fill=X, expand=True, ipady=10)
+        ttk.Button(buttons_frame_bottom, text="💾 บันทึกการขาย", 
+                  command=save_transaction, 
+                  style='Success.TButton').pack(side=LEFT, padx=7, fill=X, expand=True, ipady=7)
+        ttk.Button(buttons_frame_bottom, text="ยกเลิก", 
+                  command=cancel_checkout,
+                  style='Cancel.TButton').pack(side=RIGHT, padx=7, fill=X, expand=True, ipady=7)
         
         style = ttk.Style()
-        style.configure('Success.TButton', font=(None, 14,'bold'))
-        style.configure('Cancel.TButton', font=(None, 14,'bold'))
+        style.configure('Success.TButton', font=(None, 10,'bold'))
+        style.configure('Cancel.TButton', font=(None, 10,'bold'))
         
+        # แสดงส่วนชำระเงินสดเริ่มต้น
+        toggle_payment_sections()
         update_change()
+
+    def print_credit_bill(self, bill_id, customer, transaction_id, 
+                         subtotal, vat, grand_total, credit_days):
+        """พิมพ์ใบวางบิล"""
+        try:
+            if not RECEIPT_AVAILABLE:
+                print("Receipt printer not available")
+                return
+            
+            printer = ReceiptPrinter()
+            
+            due_date = (datetime.now() + timedelta(days=credit_days)).strftime('%Y-%m-%d')
+            
+            transaction_data = {
+                'transaction_id': bill_id,
+                'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'subtotal': subtotal,
+                'vat': vat,
+                'grand_total': grand_total,
+                'received_amount': 0,
+                'change_amount': 0,
+                'payment_type': 'CREDIT',
+                'customer_name': customer[1],
+                'customer_phone': customer[2] or '-',
+                'credit_days': credit_days,
+                'due_date': due_date
+            }
+            
+            filename = printer.create_receipt(transaction_data, list(self.cart.values()), 
+                                             f"credit_bill_{bill_id}.pdf")
+            
+            print(f"Credit bill created: {filename}")
+            
+        except Exception as e:
+            print(f"Error printing credit bill: {e}")
+            import traceback
+            traceback.print_exc()
 
     def show_print_options(self, transaction_id, subtotal, vat, grand_total, received_amount, change_amount):
         """แสดงหน้าต่างตัวเลือกการพิมพ์"""
@@ -745,9 +888,6 @@ class SalesTab(Frame):
                             bg='#4CAF50', fg='white', font=('Arial', 11, 'bold'),
                             height=3, width=20)
             pdf_btn.pack(side=LEFT, padx=10, pady=5, fill=X, expand=True)
-        else:
-            Label(button_frame, text="PDF ไม่พร้อมใช้\n(ติดตั้ง reportlab)", 
-                  fg='red', font=('Arial', 9)).pack(side=LEFT, padx=10)
         
         if THERMAL_AVAILABLE:
             thermal_btn = Button(button_frame,
@@ -756,37 +896,13 @@ class SalesTab(Frame):
                                bg='#2196F3', fg='white', font=('Arial', 11, 'bold'),
                                height=3, width=20)
             thermal_btn.pack(side=RIGHT, padx=10, pady=5, fill=X, expand=True)
-        else:
-            Label(button_frame, text="Thermal Printer ไม่พร้อมใช้\n(ติดตั้ง pywin32)", 
-                  fg='red', font=('Arial', 9)).pack(side=RIGHT, padx=10)
         
-        options_frame = Frame(print_window)
-        options_frame.pack(pady=20, fill=X, padx=20)
-        
-        if RECEIPT_AVAILABLE and THERMAL_AVAILABLE:
-            both_btn = Button(options_frame,
-                             text="📄🖨️ Export PDF และ Print Receipt",
-                             command=lambda: self.export_and_print_both(transaction_data, cart_items, print_window),
-                             bg='#FF9800', fg='white', font=('Arial', 11, 'bold'),
-                             height=2)
-            both_btn.pack(fill=X, pady=5)
-        
-        skip_btn = Button(options_frame,
+        skip_btn = Button(print_window,
                          text="ข้าม (ไม่พิมพ์ใบเสร็จ)",
                          command=print_window.destroy,
                          font=('Arial', 10),
                          height=2)
-        skip_btn.pack(fill=X, pady=5)
-        
-        if THERMAL_AVAILABLE:
-            test_frame = Frame(print_window)
-            test_frame.pack(pady=10)
-            
-            test_btn = Button(test_frame,
-                             text="🔧 ทดสอบ Thermal Printer",
-                             command=self.test_thermal_printer,
-                             font=('Arial', 9))
-            test_btn.pack()
+        skip_btn.pack(pady=10, padx=20, fill=X)
 
     def export_pdf_receipt(self, transaction_data, cart_items, parent_window):
         """Export ใบเสร็จเป็น PDF"""
@@ -803,65 +919,27 @@ class SalesTab(Frame):
             )
             
             messagebox.showinfo("สำเร็จ", 
-                               f"Export PDF เรียบร้อย!\n"
-                               f"ไฟล์: {filename}\n"
-                               f"ไฟล์จะเปิดอัตโนมัติ")
+                               f"Export PDF เรียบร้อย!\nไฟล์: {filename}\nไฟล์จะเปิดอัตโนมัติ")
             parent_window.destroy()
             
         except Exception as e:
-            messagebox.showerror("ข้อผิดพลาด", 
-                               f"ไม่สามารถ Export PDF ได้:\n{str(e)}")
+            messagebox.showerror("ข้อผิดพลาด", f"ไม่สามารถ Export PDF ได้:\n{str(e)}")
 
     def print_thermal_receipt(self, transaction_data, cart_items, parent_window):
         """พิมพ์ใบเสร็จด้วย Thermal Printer"""
         try:
             printer = ThermalPrinter()
-            
             transaction_data['datetime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
             success = printer.print_receipt(transaction_data, cart_items)
             
             if success:
                 messagebox.showinfo("สำเร็จ", 
-                                   f"พิมพ์ใบเสร็จเรียบร้อย!\n"
-                                   f"เลขที่: {transaction_data['transaction_id']}")
+                                   f"พิมพ์ใบเสร็จเรียบร้อย!\nเลขที่: {transaction_data['transaction_id']}")
                 parent_window.destroy()
             
         except Exception as e:
             messagebox.showerror("ข้อผิดพลาด", 
-                               f"ไม่สามารถพิมพ์ได้:\n{str(e)}\n\n"
-                               f"กรุณาตรวจสอบ:\n"
-                               f"• เครื่องพิมพ์เชื่อมต่อแล้ว\n"
-                               f"• ติดตั้ง pywin32\n"
-                               f"• เปิดเครื่องพิมพ์")
-
-    def export_and_print_both(self, transaction_data, cart_items, parent_window):
-        """Export PDF และ Print Thermal พร้อมกัน"""
-        try:
-            pdf_printer = ReceiptPrinter()
-            pdf_filename = pdf_printer.print_receipt_from_transaction(
-                transaction_id=transaction_data['transaction_id'],
-                subtotal=transaction_data['subtotal'],
-                vat=transaction_data['vat'],
-                grand_total=transaction_data['grand_total'],
-                received_amount=transaction_data['received_amount'],
-                change_amount=transaction_data['change_amount'],
-                cart_items=cart_items
-            )
-            
-            thermal_printer = ThermalPrinter()
-            transaction_data['datetime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            thermal_printer.print_receipt(transaction_data, cart_items)
-            
-            messagebox.showinfo("สำเร็จ", 
-                               f"Export PDF และพิมพ์ใบเสร็จเรียบร้อย!\n"
-                               f"PDF: {pdf_filename}\n"
-                               f"เลขที่: {transaction_data['transaction_id']}")
-            parent_window.destroy()
-            
-        except Exception as e:
-            messagebox.showerror("ข้อผิดพลาด", 
-                               f"เกิดข้อผิดพลาด:\n{str(e)}")
+                               f"ไม่สามารถพิมพ์ได้:\n{str(e)}\n\nกรุณาตรวจสอบ:\n• เครื่องพิมพ์เชื่อมต่อแล้ว\n• ติดตั้ง pywin32\n• เปิดเครื่องพิมพ์")
 
     def test_thermal_printer(self):
         """ทดสอบ Thermal Printer"""
@@ -922,17 +1000,21 @@ class SalesTab(Frame):
                 
             if self.profit_tab:
                 self.profit_tab.refresh_data()
+            
+            if self.credit_tab:
+                self.credit_tab.refresh_data()
                 
             print("All tabs refreshed after checkout")
             
         except Exception as e:
             print(f"Error refreshing tabs: {str(e)}")
             
-    def set_references(self, product_tab=None, dashboard_tab=None, profit_tab=None):
+    def set_references(self, product_tab=None, dashboard_tab=None, profit_tab=None, credit_tab=None):
         """ตั้งค่า reference ไปยังแท็บอื่นๆ"""
         self.product_tab = product_tab
         self.dashboard_tab = dashboard_tab
         self.profit_tab = profit_tab
+        self.credit_tab = credit_tab
             
     def refresh_product_buttons(self):
         """อัปเดตปุ่มสินค้าใหม่"""
