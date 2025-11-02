@@ -139,12 +139,12 @@ try:
     tab_icon6 = PhotoImage(file='tab6.png')
     
     # เพิ่มแท็บพร้อมไอคอน
-    Tab.add(T1, text=' ระบบขาย ', image=tab_icon1, compound='left')
+    Tab.add(T1, text=' ระบบขายสินค้า ', image=tab_icon1, compound='left')
     Tab.add(T2, text=' เพิ่มสินค้า ', image=tab_icon2, compound='left')
     Tab.add(T3, text=' Dashboard', image=tab_icon3, compound='left')
-    Tab.add(T4, text=' Profit ', image=tab_icon4, compound='left')
-    Tab.add(T5, text=' ตั้งค่าร้าน', image=tab_icon5, compound='left')
-    Tab.add(T6, text=' เครดิต', image=tab_icon6, compound='left')
+    Tab.add(T4, text=' วิเคราะห์กำไร ', image=tab_icon4, compound='left')
+    Tab.add(T5, text=' ตั้งค่าร้านค้า', image=tab_icon5, compound='left')
+    Tab.add(T6, text=' ลูกค้าและบิลเครดิต', image=tab_icon6, compound='left')
     
     # เก็บ reference ไว้
     GUI.tab_icon1 = tab_icon1
