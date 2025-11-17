@@ -11,14 +11,14 @@ class ShopSettingsTab:
         
         # Color scheme (ใช้สีเดียวกับโปรแกรมหลัก)
         self.COLORS = {
-            'header': '#0d9488',
+            'header': '#475569',
             'sidebar': '#475569',
             'background': '#f8fafc',
-            'accent': '#14b8a6',
+            'accent': "#c0bdb8",
             'text_dark': '#0f172a',
             'text_light': '#ffffff',
-            'hover': "#48b4ab",
-            'card_bg': '#ffffff',
+            'hover': "#b5a9a9",
+            'card_bg': '#f0f0f0',  
             'success': '#10b981',
             'border': '#e2e8f0'
         }
@@ -404,7 +404,7 @@ class ShopSettingsTab:
                   text='ข้อมูลข้างต้นจะปรากฏที่ส่วนหัวของใบเสร็จ PDF\nหลังจากคุณกดปุ่ม "บันทึก" และทำการขายสินค้า',
                   font=('Helvetica', 9, 'italic'),
                   bg='white',
-                  fg='#94a3b8',
+                  fg="#23282f",
                   justify=CENTER).pack(pady=10)
             
             # Close button

@@ -1,4 +1,4 @@
-# receipt_printer.py - Modern Design Version with Shop Settings Integration
+# receipt_printer.py - Modern Design Version with Invoice/Credit System
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -9,7 +9,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.graphics.shapes import Drawing, Rect, Line
 from reportlab.graphics import renderPDF
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import json
 
@@ -17,7 +17,8 @@ class ReceiptPrinter:
     def __init__(self):
         self.thai_font_available = False
         self.thai_font_name = 'THFont'
-        self.shop_settings = self.load_shop_settings()  # โหลดข้อมูลร้าน
+        self.shop_settings = self.load_shop_settings()
+        self.invoices_file = "invoices_data.json"
         self.setup_fonts()
         
     def load_shop_settings(self):
@@ -42,6 +43,92 @@ class ReceiptPrinter:
         except Exception as e:
             print(f"❌ Error loading shop settings: {e}")
             return default_settings
+    
+    def load_invoices_data(self):
+        """โหลดข้อมูลใบวางบิลทั้งหมด"""
+        try:
+            if os.path.exists(self.invoices_file):
+                with open(self.invoices_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return {}
+        except Exception as e:
+            print(f"❌ Error loading invoices: {e}")
+            return {}
+    
+    def save_invoice_data(self, invoice_id, invoice_data):
+        """บันทึกข้อมูลใบวางบิล"""
+        try:
+            invoices = self.load_invoices_data()
+            invoices[invoice_id] = invoice_data
+            
+            with open(self.invoices_file, 'w', encoding='utf-8') as f:
+                json.dump(invoices, f, ensure_ascii=False, indent=2)
+            
+            print(f"✅ บันทึกใบวางบิล {invoice_id} สำเร็จ")
+            return True
+        except Exception as e:
+            print(f"❌ Error saving invoice: {e}")
+            return False
+    
+    def update_invoice_payment(self, invoice_id, payment_amount, payment_date=None):
+        """อัพเดทการชำระเงินของใบวางบิล"""
+        try:
+            invoices = self.load_invoices_data()
+            
+            if invoice_id not in invoices:
+                print(f"❌ ไม่พบใบวางบิล {invoice_id}")
+                return False
+            
+            invoice = invoices[invoice_id]
+            
+            # อัพเดทยอดชำระ
+            invoice['paid_amount'] = invoice.get('paid_amount', 0) + payment_amount
+            invoice['remaining_amount'] = invoice['grand_total'] - invoice['paid_amount']
+            
+            # อัพเดทสถานะ
+            if invoice['remaining_amount'] <= 0:
+                invoice['status'] = 'paid'
+                invoice['paid_date'] = payment_date or datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            elif invoice['paid_amount'] > 0:
+                invoice['status'] = 'partial'
+            
+            # บันทึกประวัติการชำระเงิน
+            if 'payment_history' not in invoice:
+                invoice['payment_history'] = []
+            
+            invoice['payment_history'].append({
+                'date': payment_date or datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'amount': payment_amount,
+                'remaining': invoice['remaining_amount']
+            })
+            
+            invoices[invoice_id] = invoice
+            
+            with open(self.invoices_file, 'w', encoding='utf-8') as f:
+                json.dump(invoices, f, ensure_ascii=False, indent=2)
+            
+            print(f"✅ อัพเดทการชำระเงิน {invoice_id} สำเร็จ")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error updating payment: {e}")
+            return False
+    
+    def get_invoice_info(self, invoice_id):
+        """ดึงข้อมูลใบวางบิล"""
+        invoices = self.load_invoices_data()
+        return invoices.get(invoice_id, None)
+    
+    def get_unpaid_invoices(self):
+        """ดึงรายการใบวางบิลที่ยังไม่ได้ชำระหรือชำระไม่ครบ"""
+        invoices = self.load_invoices_data()
+        unpaid = {}
+        
+        for inv_id, inv_data in invoices.items():
+            if inv_data.get('status') in ['unpaid', 'partial']:
+                unpaid[inv_id] = inv_data
+        
+        return unpaid
     
     def setup_fonts(self):
         """ตั้งค่าฟอนต์ภาษาไทย"""
@@ -82,17 +169,16 @@ class ReceiptPrinter:
         d.add(Line(0, 0.5*mm, width, 0.5*mm, strokeColor=colors.HexColor(color), strokeWidth=1))
         return d
             
-    def create_receipt(self, transaction_data, cart_items, output_filename=None):
-        """สร้างใบเสร็จ PDF สไตล์โมเดิร์น พร้อมข้อมูลร้านค้า"""
+    def create_receipt(self, transaction_data, cart_items, output_filename=None, is_invoice=False, customer_info=None):
+        """สร้างใบเสร็จ/ใบวางบิล PDF สไตล์โมเดิร์น"""
         try:
-            # รีโหลดข้อมูลร้านค้าทุกครั้งที่พิมพ์ใบเสร็จ
             self.shop_settings = self.load_shop_settings()
             
             if not output_filename:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                output_filename = f"receipt_{transaction_data['transaction_id']}_{timestamp}.pdf"
+                prefix = "invoice" if is_invoice else "receipt"
+                output_filename = f"{prefix}_{transaction_data['transaction_id']}_{timestamp}.pdf"
             
-            # สร้างเอกสาร PDF
             doc = SimpleDocTemplate(
                 output_filename,
                 pagesize=A4,
@@ -102,7 +188,6 @@ class ReceiptPrinter:
                 bottomMargin=15*mm
             )
             
-            # ลงทะเบียนฟอนต์อีกครั้ง
             if self.thai_font_available:
                 font_paths = ["THSarabunNew.ttf", "C:/Windows/Fonts/THSarabunNew.ttf"]
                 for font_path in font_paths:
@@ -113,68 +198,33 @@ class ReceiptPrinter:
             elements = []
             styles = getSampleStyleSheet()
             
-            # 🎨 สร้าง Modern Styles
+            # สร้าง Styles
             if self.thai_font_available:
                 title_style = ParagraphStyle(
-                    'ModernTitle',
-                    parent=styles['Title'],
-                    fontName=self.thai_font_name,
-                    fontSize=28,
-                    textColor=colors.HexColor('#0f172a'),
-                    spaceAfter=10,
-                    alignment=TA_CENTER,
-                    leading=34
+                    'ModernTitle', parent=styles['Title'], fontName=self.thai_font_name,
+                    fontSize=28, textColor=colors.HexColor('#0f172a'), spaceAfter=10,
+                    alignment=TA_CENTER, leading=34
                 )
-                
                 subtitle_style = ParagraphStyle(
-                    'ModernSubtitle',
-                    parent=styles['Normal'],
-                    fontName=self.thai_font_name,
-                    fontSize=14,
-                    textColor=colors.HexColor('#475569'),
-                    spaceAfter=8,
-                    alignment=TA_CENTER,
-                    leading=18
+                    'ModernSubtitle', parent=styles['Normal'], fontName=self.thai_font_name,
+                    fontSize=14, textColor=colors.HexColor('#475569'), spaceAfter=8,
+                    alignment=TA_CENTER, leading=18
                 )
-                
                 info_label_style = ParagraphStyle(
-                    'ModernInfoLabel',
-                    parent=styles['Normal'],
-                    fontName=self.thai_font_name,
-                    fontSize=14,
-                    textColor=colors.HexColor('#334155'),
-                    spaceAfter=5,
-                    leading=18
+                    'ModernInfoLabel', parent=styles['Normal'], fontName=self.thai_font_name,
+                    fontSize=14, textColor=colors.HexColor('#334155'), spaceAfter=5, leading=18
                 )
-                
                 info_value_style = ParagraphStyle(
-                    'ModernInfoValue',
-                    parent=styles['Normal'],
-                    fontName=self.thai_font_name,
-                    fontSize=14,
-                    textColor=colors.HexColor('#0f172a'),
-                    spaceAfter=5,
-                    leading=18
+                    'ModernInfoValue', parent=styles['Normal'], fontName=self.thai_font_name,
+                    fontSize=14, textColor=colors.HexColor('#0f172a'), spaceAfter=5, leading=18
                 )
-                
                 table_header_style = ParagraphStyle(
-                    'ModernTableHeader',
-                    parent=styles['Normal'],
-                    fontName=self.thai_font_name,
-                    fontSize=14,
-                    textColor=colors.white,
-                    alignment=TA_LEFT,
-                    leading=18
+                    'ModernTableHeader', parent=styles['Normal'], fontName=self.thai_font_name,
+                    fontSize=14, textColor=colors.white, alignment=TA_LEFT, leading=18
                 )
-                
                 footer_style = ParagraphStyle(
-                    'ModernFooter',
-                    parent=styles['Normal'],
-                    fontName=self.thai_font_name,
-                    fontSize=13,
-                    alignment=TA_CENTER,
-                    textColor=colors.HexColor('#64748b'),
-                    leading=17
+                    'ModernFooter', parent=styles['Normal'], fontName=self.thai_font_name,
+                    fontSize=13, alignment=TA_CENTER, textColor=colors.HexColor('#64748b'), leading=17
                 )
             else:
                 title_style = ParagraphStyle('EngTitle', parent=styles['Title'], fontSize=28, spaceAfter=10, alignment=TA_CENTER, textColor=colors.HexColor('#0f172a'))
@@ -184,8 +234,25 @@ class ReceiptPrinter:
                 table_header_style = ParagraphStyle('EngTableHeader', parent=styles['Normal'], fontSize=14, textColor=colors.white, alignment=TA_LEFT)
                 footer_style = ParagraphStyle('EngFooter', parent=styles['Normal'], fontSize=13, alignment=TA_CENTER, textColor=colors.HexColor('#64748b'))
             
-            # 📌 Header Section - ใช้ข้อมูลจาก shop_settings
+            # Header Section
             elements.append(Spacer(1, 5))
+            
+            # แสดงประเภทเอกสาร
+            if is_invoice:
+                doc_type_style = ParagraphStyle(
+                    'InvoiceType', parent=title_style, fontSize=22,
+                    textColor=colors.HexColor('#dc2626'), alignment=TA_CENTER
+                )
+                
+                if self.thai_font_available:
+                    elements.append(Paragraph(
+                        f"<font name='{self.thai_font_name}'><b>ใบวางบิล / INVOICE</b></font>", 
+                        doc_type_style
+                    ))
+                else:
+                    elements.append(Paragraph("<b>🧾 INVOICE</b>", doc_type_style))
+                
+                elements.append(Spacer(1, 5))
             
             # ชื่อร้าน
             if self.thai_font_available:
@@ -219,11 +286,57 @@ class ReceiptPrinter:
             elements.append(self.create_divider(17*cm))
             elements.append(Spacer(1, 15))
             
-            # 📋 ข้อมูลใบเสร็จ
+            # ข้อมูลลูกค้า (สำหรับใบวางบิล)
+            if is_invoice and customer_info:
+                if self.thai_font_available:
+                    customer_style = ParagraphStyle('ThaiCustomer', parent=info_label_style, fontSize=13, fontName=self.thai_font_name)
+                    
+                    elements.append(Paragraph(f"<font name='{self.thai_font_name}'><b>ข้อมูลลูกค้า:</b></font>", info_label_style))
+                    elements.append(Spacer(1, 8))
+                    
+                    customer_data = [
+                        [Paragraph(f"<font name='{self.thai_font_name}'>ชื่อ:</font>", customer_style),
+                         Paragraph(f"<font name='{self.thai_font_name}'><b>{customer_info.get('name', 'N/A')}</b></font>", info_value_style)],
+                        [Paragraph(f"<font name='{self.thai_font_name}'>โทรศัพท์:</font>", customer_style),
+                         Paragraph(f"<font name='{self.thai_font_name}'><b>{customer_info.get('phone', 'N/A')}</b></font>", info_value_style)],
+                        [Paragraph(f"<font name='{self.thai_font_name}'>ที่อยู่:</font>", customer_style),
+                         Paragraph(f"<font name='{self.thai_font_name}'><b>{customer_info.get('address', 'N/A')}</b></font>", info_value_style)],
+                    ]
+                else:
+                    customer_style = ParagraphStyle('EngCustomer', parent=info_label_style, fontSize=13)
+                    
+                    elements.append(Paragraph("<b>Customer Information:</b>", info_label_style))
+                    elements.append(Spacer(1, 8))
+                    
+                    customer_data = [
+                        [Paragraph("Name:", customer_style),
+                         Paragraph(f"<b>{customer_info.get('name', 'N/A')}</b>", info_value_style)],
+                        [Paragraph("Phone:", customer_style),
+                         Paragraph(f"<b>{customer_info.get('phone', 'N/A')}</b>", info_value_style)],
+                        [Paragraph("Address:", customer_style),
+                         Paragraph(f"<b>{customer_info.get('address', 'N/A')}</b>", info_value_style)],
+                    ]
+                
+                customer_table = Table(customer_data, colWidths=[3*cm, 14*cm])
+                customer_table.setStyle(TableStyle([
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                    ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
+                    ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ]))
+                elements.append(customer_table)
+                elements.append(Spacer(1, 15))
+            
+            # ข้อมูลใบเสร็จ/ใบวางบิล
             if self.thai_font_available:
+                doc_label = "เลขที่ใบวางบิล:" if is_invoice else "เลขที่ใบเสร็จ:"
+                
                 info_data = [
                     [
-                        Paragraph(f"<font name='{self.thai_font_name}'>เลขที่ใบเสร็จ:</font>", info_label_style),
+                        Paragraph(f"<font name='{self.thai_font_name}'>{doc_label}</font>", info_label_style),
                         Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['transaction_id']}</b></font>", info_value_style),
                         Paragraph(f"<font name='{self.thai_font_name}'>วันที่:</font>", info_label_style),
                         Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['datetime']}</b></font>", info_value_style)
@@ -231,14 +344,16 @@ class ReceiptPrinter:
                     [
                         Paragraph(f"<font name='{self.thai_font_name}'>พนักงานขาย:</font>", info_label_style),
                         Paragraph(f"<font name='{self.thai_font_name}'><b>Admin</b></font>", info_value_style),
-                        '',
-                        ''
+                        Paragraph(f"<font name='{self.thai_font_name}'>กำหนดชำระ:</font>" if is_invoice else '', info_label_style),
+                        Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data.get('due_date', 'N/A')}</b></font>" if is_invoice else '', info_value_style)
                     ]
                 ]
             else:
+                doc_label = "Invoice No:" if is_invoice else "Receipt No:"
+                
                 info_data = [
                     [
-                        Paragraph("Receipt No:", info_label_style),
+                        Paragraph(doc_label, info_label_style),
                         Paragraph(f"<b>{transaction_data['transaction_id']}</b>", info_value_style),
                         Paragraph("Date:", info_label_style),
                         Paragraph(f"<b>{transaction_data['datetime']}</b>", info_value_style)
@@ -246,8 +361,8 @@ class ReceiptPrinter:
                     [
                         Paragraph("Cashier:", info_label_style),
                         Paragraph("<b>Admin</b>", info_value_style),
-                        '',
-                        ''
+                        Paragraph("Due Date:" if is_invoice else '', info_label_style),
+                        Paragraph(f"<b>{transaction_data.get('due_date', 'N/A')}</b>" if is_invoice else '', info_value_style)
                     ]
                 ]
             
@@ -258,10 +373,9 @@ class ReceiptPrinter:
                 ('RIGHTPADDING', (0, 0), (-1, -1), 0),
             ]))
             elements.append(info_table)
-            
             elements.append(Spacer(1, 15))
             
-            # 🛒 ตารางสินค้า
+            # ตารางสินค้า
             if self.thai_font_available:
                 header_right = ParagraphStyle('ThaiHR', parent=table_header_style, alignment=TA_RIGHT, fontName=self.thai_font_name)
                 table_headers = [
@@ -281,7 +395,6 @@ class ReceiptPrinter:
             
             table_data = [table_headers]
             
-            # เพิ่มสินค้า
             for item in cart_items:
                 barcode, title, price, quantity = item
                 price = float(price)
@@ -312,7 +425,6 @@ class ReceiptPrinter:
                 
                 table_data.append(row)
             
-            # สร้างตาราง
             table = Table(table_data, colWidths=[7.5*cm, 2.5*cm, 3.5*cm, 3.5*cm])
             table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0d9488')),
@@ -332,7 +444,7 @@ class ReceiptPrinter:
             elements.append(table)
             elements.append(Spacer(1, 20))
             
-            # 💰 สรุปยอดเงิน
+            # สรุปยอดเงิน
             if self.thai_font_available:
                 summary_label = ParagraphStyle('ThaiSumLabel', parent=info_label_style, fontSize=15, alignment=TA_RIGHT, fontName=self.thai_font_name)
                 summary_value = ParagraphStyle('ThaiSumValue', parent=info_value_style, fontSize=15, alignment=TA_RIGHT, fontName=self.thai_font_name)
@@ -346,12 +458,28 @@ class ReceiptPrinter:
                     ['', ''],
                     [Paragraph(f"<font name='{self.thai_font_name}'><b>รวมทั้งหมด</b></font>", summary_total), 
                      Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['grand_total']:,.2f} ฿</b></font>", summary_total)],
-                    ['', ''],
-                    [Paragraph(f"<font name='{self.thai_font_name}'><b>เงินที่รับ</b></font>", summary_label), 
-                     Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['received_amount']:,.2f} ฿</b></font>", summary_value)],
-                    [Paragraph(f"<font name='{self.thai_font_name}'><b>เงินทอน</b></font>", summary_label), 
-                     Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['change_amount']:,.2f} ฿</b></font>", summary_value)]
                 ]
+                
+                if not is_invoice:
+                    summary_data.extend([
+                        ['', ''],
+                        [Paragraph(f"<font name='{self.thai_font_name}'><b>เงินที่รับ</b></font>", summary_label), 
+                         Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['received_amount']:,.2f} ฿</b></font>", summary_value)],
+                        [Paragraph(f"<font name='{self.thai_font_name}'><b>เงินทอน</b></font>", summary_label), 
+                         Paragraph(f"<font name='{self.thai_font_name}'><b>{transaction_data['change_amount']:,.2f} ฿</b></font>", summary_value)]
+                    ])
+                else:
+                    paid_amount = transaction_data.get('paid_amount', 0)
+                    remaining = transaction_data['grand_total'] - paid_amount
+                    
+                    summary_data.extend([
+                        ['', ''],
+                        [Paragraph(f"<font name='{self.thai_font_name}'><b>ชำระแล้ว</b></font>", summary_label), 
+                         Paragraph(f"<font name='{self.thai_font_name}'><b>{paid_amount:,.2f} ฿</b></font>", summary_value)],
+                        [Paragraph(f"<font name='{self.thai_font_name}'><b>คงเหลือ</b></font>", summary_label), 
+                         Paragraph(f"<font name='{self.thai_font_name}'><b>{remaining:,.2f} ฿</b></font>", ParagraphStyle('ThaiRemain', parent=summary_value, textColor=colors.HexColor('#dc2626')))]
+                    ])
+                    
             else:
                 summary_label = ParagraphStyle('EngSumLabel', parent=info_label_style, fontSize=15, alignment=TA_RIGHT)
                 summary_value = ParagraphStyle('EngSumValue', parent=info_value_style, fontSize=15, alignment=TA_RIGHT)
@@ -362,10 +490,23 @@ class ReceiptPrinter:
                     [Paragraph("<b>VAT 7%</b>", summary_label), Paragraph(f"<b>{transaction_data['vat']:,.2f} ฿</b>", summary_value)],
                     ['', ''],
                     [Paragraph("<b>Grand Total</b>", summary_total), Paragraph(f"<b>{transaction_data['grand_total']:,.2f} ฿</b>", summary_total)],
-                    ['', ''],
-                    [Paragraph("<b>Received</b>", summary_label), Paragraph(f"<b>{transaction_data['received_amount']:,.2f} ฿</b>", summary_value)],
-                    [Paragraph("<b>Change</b>", summary_label), Paragraph(f"<b>{transaction_data['change_amount']:,.2f} ฿</b>", summary_value)]
                 ]
+                
+                if not is_invoice:
+                    summary_data.extend([
+                        ['', ''],
+                        [Paragraph("<b>Received</b>", summary_label), Paragraph(f"<b>{transaction_data['received_amount']:,.2f} ฿</b>", summary_value)],
+                        [Paragraph("<b>Change</b>", summary_label), Paragraph(f"<b>{transaction_data['change_amount']:,.2f} ฿</b>", summary_value)]
+                    ])
+                else:
+                    paid_amount = transaction_data.get('paid_amount', 0)
+                    remaining = transaction_data['grand_total'] - paid_amount
+                    
+                    summary_data.extend([
+                        ['', ''],
+                        [Paragraph("<b>Paid</b>", summary_label), Paragraph(f"<b>{paid_amount:,.2f} ฿</b>", summary_value)],
+                        [Paragraph("<b>Remaining</b>", summary_label), Paragraph(f"<b>{remaining:,.2f} ฿</b>", ParagraphStyle('EngRemain', parent=summary_value, textColor=colors.HexColor('#dc2626')))]
+                    ])
             
             summary_table = Table(summary_data, colWidths=[11*cm, 6*cm])
             summary_table.setStyle(TableStyle([
@@ -382,9 +523,25 @@ class ReceiptPrinter:
             elements.append(summary_table)
             elements.append(Spacer(1, 25))
             
-            # 📝 Footer
+            # Footer
             elements.append(self.create_divider(17*cm))
             elements.append(Spacer(1, 15))
+            
+            # หมายเหตุสำหรับใบวางบิล
+            if is_invoice:
+                if self.thai_font_available:
+                    note_style = ParagraphStyle('ThaiNote', parent=footer_style, fontSize=12, textColor=colors.HexColor('#dc2626'), alignment=TA_LEFT)
+                    elements.append(Paragraph(
+                        f"<font name='{self.thai_font_name}'><b>**หมายเหตุ: กรุณาชำระเงินภายในวันที่กำหนด | ติดต่อ: {self.shop_settings['phone']}</b></font>", 
+                        note_style
+                    ))
+                else:
+                    note_style = ParagraphStyle('EngNote', parent=footer_style, fontSize=12, textColor=colors.HexColor('#dc2626'), alignment=TA_LEFT)
+                    elements.append(Paragraph(
+                        f"<b>⚠️ Note: Please pay by due date | Contact: {self.shop_settings['phone']}</b>", 
+                        note_style
+                    ))
+                elements.append(Spacer(1, 10))
             
             if self.thai_font_available:
                 elements.append(Paragraph(
@@ -396,10 +553,9 @@ class ReceiptPrinter:
                 elements.append(Spacer(1, 8))
                 elements.append(Paragraph(f"Printed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", footer_style))
             
-            # สร้าง PDF
             doc.build(elements)
             
-            print(f"✅ ใบเสร็จถูกสร้างด้วยข้อมูล: {self.shop_settings['shop_name']}")
+            print(f"✅ {'ใบวางบิล' if is_invoice else 'ใบเสร็จ'}ถูกสร้างด้วยข้อมูล: {self.shop_settings['shop_name']}")
             
             return output_filename
             
@@ -442,9 +598,8 @@ class ReceiptPrinter:
                 'change_amount': change_amount
             }
             
-            filename = self.create_receipt(transaction_data, cart_items)
+            filename = self.create_receipt(transaction_data, cart_items, is_invoice=False)
             
-            # เปิดไฟล์ PDF
             try:
                 os.startfile(filename)
             except AttributeError:
@@ -457,6 +612,63 @@ class ReceiptPrinter:
             
         except Exception as e:
             raise Exception(f"Error printing receipt: {str(e)}")
+    
+    def create_invoice(self, transaction_id, subtotal, vat, grand_total, cart_items, 
+                      customer_info, due_days=30):
+        """สร้างใบวางบิล/ใบเครดิต"""
+        try:
+            due_date = (datetime.now() + timedelta(days=due_days)).strftime('%Y-%m-%d')
+            
+            transaction_data = {
+                'transaction_id': transaction_id,
+                'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'due_date': due_date,
+                'subtotal': subtotal,
+                'vat': vat,
+                'grand_total': grand_total,
+                'paid_amount': 0,
+                'received_amount': 0,
+                'change_amount': 0
+            }
+            
+            filename = self.create_receipt(
+                transaction_data, 
+                cart_items, 
+                is_invoice=True,
+                customer_info=customer_info
+            )
+            
+            invoice_data = {
+                'transaction_id': transaction_id,
+                'customer_info': customer_info,
+                'datetime': transaction_data['datetime'],
+                'due_date': due_date,
+                'subtotal': subtotal,
+                'vat': vat,
+                'grand_total': grand_total,
+                'paid_amount': 0,
+                'remaining_amount': grand_total,
+                'status': 'unpaid',
+                'cart_items': cart_items,
+                'payment_history': []
+            }
+            
+            self.save_invoice_data(transaction_id, invoice_data)
+            
+            try:
+                os.startfile(filename)
+            except AttributeError:
+                try:
+                    os.system(f"open '{filename}'")
+                except:
+                    os.system(f"xdg-open '{filename}'")
+            
+            print(f"✅ สร้างใบวางบิล {transaction_id} สำเร็จ | กำหนดชำระ: {due_date}")
+            return filename
+            
+        except Exception as e:
+            raise Exception(f"Error creating invoice: {str(e)}")
+
 
 # ตัวอย่างการใช้งาน
 def test_receipt_printer():
@@ -494,5 +706,163 @@ def test_receipt_printer():
     except Exception as e:
         print(f"❌ Error: {e}")
 
-if __name__ == "__main__":
+
+def test_invoice_system():
+    """ทดสอบระบบใบวางบิล"""
+    printer = ReceiptPrinter()
+    
+    test_cart = [
+        ['001', 'สินค้า A - Product A', 150.00, 5],
+        ['002', 'สินค้า B - Product B', 200.00, 3],
+        ['003', 'สินค้า C - Product C', 100.00, 2]
+    ]
+    
+    subtotal = 1550.00
+    vat = 108.50
+    grand_total = 1658.50
+    
+    customer_info = {
+        'name': 'บริษัท ABC จำกัด / ABC Company Ltd.',
+        'phone': '081-234-5678',
+        'address': '123 ถนนสุขุมวิท แขวงคลองเตย กรุงเทพฯ 10110'
+    }
+    
+    try:
+        print("\n" + "="*60)
+        print("🧾 ทดสอบระบบใบวางบิล (Invoice System)")
+        print("="*60)
+        
+        # 1. สร้างใบวางบิล
+        print("\n1️⃣ สร้างใบวางบิล INV-001...")
+        filename = printer.create_invoice(
+            transaction_id="INV-001",
+            subtotal=subtotal,
+            vat=vat,
+            grand_total=grand_total,
+            cart_items=test_cart,
+            customer_info=customer_info,
+            due_days=30
+        )
+        print(f"   ✅ สร้างไฟล์: {filename}")
+        
+        # 2. ดูข้อมูลใบวางบิล
+        print("\n2️⃣ ข้อมูลใบวางบิล:")
+        info = printer.get_invoice_info("INV-001")
+        if info:
+            print(f"   📋 เลขที่: {info['transaction_id']}")
+            print(f"   👤 ลูกค้า: {info['customer_info']['name']}")
+            print(f"   💰 ยอดรวม: {info['grand_total']:,.2f} บาท")
+            print(f"   📅 กำหนดชำระ: {info['due_date']}")
+            print(f"   📊 สถานะ: {info['status']}")
+            print(f"   💵 ชำระแล้ว: {info['paid_amount']:,.2f} บาท")
+            print(f"   💳 คงเหลือ: {info['remaining_amount']:,.2f} บาท")
+        
+        # 3. ชำระเงินงวดแรก
+        print("\n3️⃣ ชำระเงินงวดที่ 1: 800 บาท...")
+        success = printer.update_invoice_payment("INV-001", 800.00)
+        if success:
+            print("   ✅ บันทึกการชำระเงินสำเร็จ")
+            info = printer.get_invoice_info("INV-001")
+            print(f"   💵 ชำระแล้ว: {info['paid_amount']:,.2f} บาท")
+            print(f"   💳 คงเหลือ: {info['remaining_amount']:,.2f} บาท")
+            print(f"   📊 สถานะ: {info['status']}")
+        
+        # 4. ชำระเงินงวดที่สอง
+        print("\n4️⃣ ชำระเงินงวดที่ 2: 858.50 บาท (ชำระครบ)...")
+        success = printer.update_invoice_payment("INV-001", 858.50)
+        if success:
+            print("   ✅ บันทึกการชำระเงินสำเร็จ")
+            info = printer.get_invoice_info("INV-001")
+            print(f"   💵 ชำระแล้ว: {info['paid_amount']:,.2f} บาท")
+            print(f"   💳 คงเหลือ: {info['remaining_amount']:,.2f} บาท")
+            print(f"   📊 สถานะ: {info['status']}")
+            
+            print("\n   📜 ประวัติการชำระเงิน:")
+            for idx, payment in enumerate(info['payment_history'], 1):
+                print(f"      {idx}. วันที่: {payment['date']}")
+                print(f"         จำนวน: {payment['amount']:,.2f} บาท")
+                print(f"         คงเหลือ: {payment['remaining']:,.2f} บาท")
+        
+        # 5. สร้างใบวางบิลใหม่
+        print("\n5️⃣ สร้างใบวางบิลใหม่ INV-002...")
+        customer_info_2 = {
+            'name': 'ร้านค้าปลีก XYZ / XYZ Retail Shop',
+            'phone': '082-345-6789',
+            'address': '456 ถนนพหลโยธิน จตุจักร กรุงเทพฯ 10900'
+        }
+        
+        test_cart_2 = [
+            ['004', 'สินค้า D - Product D', 300.00, 2],
+            ['005', 'สินค้า E - Product E', 150.00, 4]
+        ]
+        
+        filename2 = printer.create_invoice(
+            transaction_id="INV-002",
+            subtotal=1200.00,
+            vat=84.00,
+            grand_total=1284.00,
+            cart_items=test_cart_2,
+            customer_info=customer_info_2,
+            due_days=15
+        )
+        print(f"   ✅ สร้างไฟล์: {filename2}")
+        
+        # 6. ดูรายการค้างชำระ
+        print("\n6️⃣ รายการใบวางบิลที่ค้างชำระ:")
+        unpaid = printer.get_unpaid_invoices()
+        if unpaid:
+            for inv_id, inv_data in unpaid.items():
+                print(f"\n   📄 {inv_id}")
+                print(f"      👤 ลูกค้า: {inv_data['customer_info']['name']}")
+                print(f"      💰 ยอดรวม: {inv_data['grand_total']:,.2f} บาท")
+                print(f"      💵 ชำระแล้ว: {inv_data['paid_amount']:,.2f} บาท")
+                print(f"      💳 คงเหลือ: {inv_data['remaining_amount']:,.2f} บาท")
+                print(f"      📅 กำหนดชำระ: {inv_data['due_date']}")
+                print(f"      📊 สถานะ: {inv_data['status']}")
+        else:
+            print("   ✅ ไม่มีใบวางบิลค้างชำระ")
+        
+        print("\n" + "="*60)
+        print("✅ ทดสอบระบบสำเร็จ!")
+        print("="*60)
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+def demo_all_features():
+    """สาธิตฟีเจอร์ทั้งหมด"""
+    print("\n" + "="*60)
+    print("🎯 RECEIPT PRINTER - FULL DEMO")
+    print("="*60)
+    
+    print("\n📄 Part 1: ใบเสร็จปกติ (Normal Receipt)")
+    print("-" * 60)
     test_receipt_printer()
+    
+    print("\n\n🧾 Part 2: ระบบใบวางบิล (Invoice System)")
+    print("-" * 60)
+    test_invoice_system()
+    
+    print("\n" + "="*60)
+    print("🎉 DEMO COMPLETED!")
+    print("="*60)
+
+
+if __name__ == "__main__":
+    import sys
+    
+    if len(sys.argv) > 1:
+        mode = sys.argv[1]
+        if mode == "receipt":
+            test_receipt_printer()
+        elif mode == "invoice":
+            test_invoice_system()
+        elif mode == "all":
+            demo_all_features()
+        else:
+            print("Usage: python receipt_printer.py [receipt|invoice|all]")
+    else:
+        demo_all_features()

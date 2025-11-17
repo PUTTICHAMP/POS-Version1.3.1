@@ -24,7 +24,7 @@ except ImportError as e:
 
 class SalesTab(Frame):
     def __init__(self, parent, product_tab=None, dashboard_tab=None, profit_tab=None, credit_tab=None):
-        super().__init__(parent, bg='#ffffff')
+        super().__init__(parent, bg='#f0f0f0')
         self.pack(fill=BOTH, expand=True)
         
         # Reference ไปยังแท็บอื่นๆ
@@ -54,15 +54,15 @@ class SalesTab(Frame):
         title_label = Label(header_frame, text='🛒 ระบบขายสินค้า', font=('Arial', 18, 'bold'))
         title_label.pack(side=TOP)
 
-        main_container = Frame(self, bg="#ffffff")
+        main_container = Frame(self, bg="#f0f0f0")
         main_container.pack(fill=BOTH, expand=True, padx=20, pady=20)
         
         # ⭐ สร้าง Frame พร้อม Canvas และ Scrollbar สำหรับปุ่มสินค้า
-        product_container = Frame(self, bg='#ffffff', relief=RIDGE, bd=2)
+        product_container = Frame(self, bg="#f0f0f0", relief=RIDGE, bd=2)
         product_container.place(x=65, y=60, width=618, height=588)
         
         # สร้าง Canvas
-        self.product_canvas = Canvas(product_container, bg="#ffffff", highlightthickness=0)
+        self.product_canvas = Canvas(product_container, bg="#f0f0f0", highlightthickness=0)
         
         # สร้าง Scrollbar แนวตั้ง
         v_scrollbar = ttk.Scrollbar(product_container, orient=VERTICAL, 

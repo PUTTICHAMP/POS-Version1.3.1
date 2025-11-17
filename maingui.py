@@ -3,22 +3,37 @@ from tkinter import ttk, messagebox
 import os
 from basicsql import *
 
-# Color Scheme
+# Color Scheme - สีสำหรับแต่ละ Tab
 COLORS = {
-    'header': '#0d9488',        # Teal-600 - Header, ปุ่มหลัก
-    'sidebar': '#475569',       # Slate-600 - Sidebar, Panel
-    'background': '#f8fafc',    # Slate-50 - พื้นหลังหลัก
-    'accent': '#14b8a6',        # Teal-500 - ปุ่มเน้น, Highlights
-    'text_dark': '#0f172a',     # Slate-900 - ข้อความเข้ม
-    'text_light': '#ffffff',    # White - ข้อความสว่าง
-    'hover': "#48b4ab",         # Teal-700 - สีเมื่อ hover
-    'border': '#5eead4',        # Teal-300 - Light Border
-    'border_dark': '#0d9488',   # Teal-600 - Dark Border
-    'card_bg': '#ffffff',       # White - Card Background
-    'success': '#10b981',       # Emerald-500 - Success
-    'warning': '#f59e0b',       # Amber-500 - Warning
-    'error': "#7A0707",         # Red-500 - Error
-    'muted': "#f2f5f9"          # Slate-400 - Muted Text
+    'header': "#475569",
+    'sidebar': '#475569',
+    'background': '#f8fafc',
+    'accent': "#64748b",
+    'text_dark': '#0f172a',
+    'text_light': '#ffffff',
+    'hover': "#e7f3f2",
+    'border': '#5eead4',
+    'border_dark': '#0d9488',
+    'card_bg': "#f7f0f0",
+    'success': '#10b981',
+    'warning': '#f59e0b',
+    'error': "#7A0707",
+    'muted': "#f2f5f9",
+
+
+    # สีสำหรับแต่ละ Tab
+    'tab1': "#31b0a5",      # 🟢 Teal
+    'tab1_hover': '#0f766e',
+    'tab2': '#3b82f6',      # 🔵 Blue
+    'tab2_hover': '#2563eb',
+    'tab3': '#8b5cf6',      # 🟣 Violet
+    'tab3_hover': '#7c3aed',
+    'tab4': '#f59e0b',      # 🟡 Amber
+    'tab4_hover': '#d97706',
+    'tab5': '#64748b',      # ⚫ Slate
+    'tab5_hover': '#475569',
+    'tab6': '#ec4899',      # 🩷 Pink
+    'tab6_hover': '#db2777',
 }
 
 # Import แต่ละแท็บ
@@ -28,12 +43,11 @@ try:
     from tab3 import DashboardTab
     from tab4 import ProfitTab
     from tab5 import ShopSettingsTab
-    from tab6 import CreditManagementTab  # เพิ่ม Tab6
+    from tab6 import CreditManagementTab
     print("✅ All tabs imported successfully")
 except ImportError as e:
     print(f"❌ Error importing tabs: {e}")
     print("กรุณาตรวจสอบว่าไฟล์ tab1.py - tab6.py อยู่ในโฟลเดอร์เดียวกัน")
-    print("และติดตั้ง tkcalendar: pip install tkcalendar")
     exit(1)
 
 GUI = Tk()
@@ -47,128 +61,176 @@ x = (ws/2)-(w/2)
 y = (hs/2)-(h/2)
 
 GUI.geometry(f'{w}x{h}+{x:.0f}+{y:.0f}')
-GUI.title('โปรแกรมขายของสำหรับ POS - Version 1.4.0 (Credit System)')
+GUI.title('โปรแกรมขายของสำหรับ POS - Version 1.4.0 (Beta)')
 GUI.configure(bg=COLORS['background'])
 
-# กำหนด Style สำหรับ ttk widgets
+# กำหนด Style พื้นฐาน
 style = ttk.Style()
 style.theme_use('clam')
-
-# Style สำหรับ Notebook (Tab container)
-style.configure('TNotebook', 
-                background=COLORS['background'],
-                borderwidth=0,
-                tabmargins=[2, 5, 2, 0])
-style.configure('TNotebook.Tab', 
-                background=COLORS['header'],
-                foreground=COLORS['text_light'],
-                padding=[30, 12],  # ปรับ padding ให้เหมาะกับ 6 แท็บ
-                font=('Helvetica', 10, 'bold'),
-                width=16)  # ลดความกว้างเล็กน้อย
-style.map('TNotebook.Tab',
-          background=[('selected', COLORS['accent'])],
-          foreground=[('selected', COLORS['text_dark'])],
-          padding=[('selected', [30, 12])],
-          expand=[('selected', [0, 0, 0, 0])])
-
-# Style สำหรับ Frame
 style.configure('TFrame', background=COLORS['background'])
-
-# Style สำหรับ Label
 style.configure('TLabel', 
                 background=COLORS['background'],
                 foreground=COLORS['text_dark'],
                 font=('Helvetica', 10))
-style.configure('Header.TLabel',
-                background=COLORS['header'],
-                foreground=COLORS['text_light'],
-                font=('Helvetica', 14, 'bold'),
-                padding=10)
-style.configure('Sidebar.TLabel',
-                background=COLORS['sidebar'],
-                foreground=COLORS['text_light'],
-                font=('Helvetica', 10))
 
-# Style สำหรับ Button
-style.configure('TButton',
-                background=COLORS['header'],
-                foreground=COLORS['text_light'],
-                borderwidth=0,
-                focuscolor='none',
-                font=('Helvetica', 10, 'bold'),
-                padding=[15, 8])
-style.map('TButton',
-          background=[('active', COLORS['hover']),
-                     ('pressed', COLORS['accent'])])
-
-style.configure('Accent.TButton',
-                background=COLORS['accent'],
-                foreground=COLORS['text_dark'],
-                font=('Helvetica', 11, 'bold'),
-                padding=[20, 10])
-style.map('Accent.TButton',
-          background=[('active', COLORS['hover']),
-                     ('pressed', COLORS['header'])])
-
-# Style สำหรับ Entry
-style.configure('TEntry',
-                fieldbackground='white',
-                foreground=COLORS['text_dark'],
-                borderwidth=2,
-                relief='solid')
-
-##########TAB###########
-Tab = ttk.Notebook(GUI)
-Tab.pack(fill=BOTH, expand=1, padx=10, pady=10)
-
-# สร้าง Frame สำหรับแต่ละแท็บ
-T1 = ttk.Frame(Tab)
-T2 = ttk.Frame(Tab)
-T3 = ttk.Frame(Tab)
-T4 = ttk.Frame(Tab)
-T5 = ttk.Frame(Tab)
-T6 = ttk.Frame(Tab)  # เพิ่ม Tab6
-
-# โหลดไอคอนแท็บ (มี error handling)
-try:
-    tab_icon1 = PhotoImage(file='tab1.png')
-    tab_icon2 = PhotoImage(file='tab2.png')
-    tab_icon3 = PhotoImage(file='tab3.png')
-    tab_icon4 = PhotoImage(file='tab4.png')
-    tab_icon5 = PhotoImage(file='tab5.png')
-    tab_icon6 = PhotoImage(file='tab6.png')
+##########CUSTOM TAB SYSTEM###########
+class CustomTabSystem:
+    def __init__(self, parent):
+        self.parent = parent
+        self.tabs = []
+        self.tab_frames = []
+        self.tab_buttons = []
+        self.current_tab = 0
+        
+        # Container หลัก
+        self.container = Frame(parent, bg=COLORS['background'])
+        self.container.pack(fill=BOTH, expand=1, padx=10, pady=10)
+        
+        # Tab Bar (แถบปุ่ม Tab)
+        self.tab_bar = Frame(self.container, bg=COLORS['background'], height=50)
+        self.tab_bar.pack(fill=X, pady=(0, 5))
+        self.tab_bar.pack_propagate(False)
+        
+        # Content Area (พื้นที่แสดงเนื้อหา)
+        self.content_area = Frame(self.container, bg=COLORS['background'])
+        self.content_area.pack(fill=BOTH, expand=1)
     
-    # เพิ่มแท็บพร้อมไอคอน
-    Tab.add(T1, text=' ระบบขายสินค้า ', image=tab_icon1, compound='left')
-    Tab.add(T2, text=' เพิ่มสินค้า ', image=tab_icon2, compound='left')
-    Tab.add(T3, text=' Dashboard', image=tab_icon3, compound='left')
-    Tab.add(T4, text=' วิเคราะห์กำไร ', image=tab_icon4, compound='left')
-    Tab.add(T5, text=' ตั้งค่าร้านค้า', image=tab_icon5, compound='left')
-    Tab.add(T6, text=' ลูกค้าและบิลเครดิต', image=tab_icon6, compound='left')
+    def add_tab(self, text, color, hover_color, icon_file=None, icon_emoji=None):
+        """เพิ่ม Tab ใหม่"""
+        # สร้าง Frame สำหรับเนื้อหา
+        tab_frame = Frame(self.content_area, bg=COLORS['background'])
+        self.tab_frames.append(tab_frame)
+        
+        # สร้างปุ่ม Tab
+        btn_frame = Frame(self.tab_bar, bg=COLORS['background'])
+        btn_frame.pack(side=LEFT, padx=2)
+        
+        # พยายามโหลดไอคอน
+        icon_label = None
+        try:
+            if icon_file and os.path.exists(icon_file):
+                icon_img = PhotoImage(file=icon_file)
+                icon_label = Label(btn_frame, image=icon_img, bg=color)
+                icon_label.image = icon_img  # Keep reference
+                icon_label.pack(side=LEFT, padx=(12, 0))
+        except:
+            # ใช้ emoji แทน
+            if icon_emoji:
+                icon_label = Label(btn_frame, text=icon_emoji, bg=color, 
+                                 fg=COLORS['text_light'], font=('Helvetica', 14))
+                icon_label.pack(side=LEFT, padx=(10, 5))
+        
+        # สร้างปุ่ม
+        tab_index = len(self.tabs)
+        
+        btn = Label(btn_frame, 
+                   text=text,
+                   bg=color,
+                   fg=COLORS['text_light'],
+                   font=('Helvetica', 10, 'bold'),
+                   padx=20,
+                   pady=12,
+                   cursor='hand2')
+        btn.pack(side=LEFT, fill=BOTH, expand=True)
+        
+        # Bind events
+        btn.bind('<Button-1>', lambda e, idx=tab_index: self.switch_tab(idx))
+        btn.bind('<Enter>', lambda e: self.on_hover(btn, hover_color))
+        btn.bind('<Leave>', lambda e: self.on_leave(btn, color))
+        
+        if icon_label:
+            icon_label.bind('<Button-1>', lambda e, idx=tab_index: self.switch_tab(idx))
+            icon_label.bind('<Enter>', lambda e: self.on_hover_with_icon(btn, icon_label, hover_color))
+            icon_label.bind('<Leave>', lambda e: self.on_leave_with_icon(btn, icon_label, color))
+        
+        self.tab_buttons.append((btn, icon_label, color, hover_color))
+        self.tabs.append({
+            'text': text,
+            'color': color,
+            'hover_color': hover_color,
+            'frame': tab_frame
+        })
+        
+        # แสดง Tab แรก
+        if tab_index == 0:
+            self.switch_tab(0)
+        
+        return tab_frame
     
-    # เก็บ reference ไว้
-    GUI.tab_icon1 = tab_icon1
-    GUI.tab_icon2 = tab_icon2
-    GUI.tab_icon3 = tab_icon3
-    GUI.tab_icon4 = tab_icon4
-    GUI.tab_icon5 = tab_icon5
-    GUI.tab_icon6 = tab_icon6
+    def on_hover(self, btn, hover_color):
+        if self.tab_buttons.index((btn, None, '', '')) != self.current_tab:
+            btn.config(bg=hover_color)
     
-    print("✅ Tab icons loaded")
+    def on_leave(self, btn, color):
+        btn_index = next((i for i, (b, _, _, _) in enumerate(self.tab_buttons) if b == btn), -1)
+        if btn_index != self.current_tab:
+            btn.config(bg=color)
     
-except:
-    # ถ้าไม่มีไอคอน ใช้ emoji แทน
-    Tab.add(T1, text=' 💰 ขาย ')
-    Tab.add(T2, text=' 📦 สินค้า')
-    Tab.add(T3, text=' 📊 Dashboard')
-    Tab.add(T4, text=' 💹 Profit ')
-    Tab.add(T5, text=' ⚙️ ตั้งค่า')
-    Tab.add(T6, text=' 💳 เครดิต')
-    print("⚠️ Tab icons not found - using emoji")
+    def on_hover_with_icon(self, btn, icon, hover_color):
+        btn_index = next((i for i, (b, _, _, _) in enumerate(self.tab_buttons) if b == btn), -1)
+        if btn_index != self.current_tab:
+            btn.config(bg=hover_color)
+            if icon:
+                icon.config(bg=hover_color)
+    
+    def on_leave_with_icon(self, btn, icon, color):
+        btn_index = next((i for i, (b, _, _, _) in enumerate(self.tab_buttons) if b == btn), -1)
+        if btn_index != self.current_tab:
+            btn.config(bg=color)
+            if icon:
+                icon.config(bg=color)
+    
+    def switch_tab(self, index):
+        """สลับไปยัง Tab ที่เลือก"""
+        # ซ่อน Tab เก่า
+        if self.current_tab is not None and self.current_tab < len(self.tab_frames):
+            self.tab_frames[self.current_tab].pack_forget()
+        
+        # แสดง Tab ใหม่
+        self.tab_frames[index].pack(fill=BOTH, expand=1)
+        self.current_tab = index
+        
+        # อัพเดทสีปุ่ม
+        for i, (btn, icon, color, hover_color) in enumerate(self.tab_buttons):
+            if i == index:
+                # Tab ที่เลือก - สว่างขึ้น
+                selected_color = hover_color
+                btn.config(bg=selected_color, relief=SOLID, borderwidth=0)
+                if icon:
+                    icon.config(bg=selected_color)
+            else:
+                # Tab ที่ไม่ได้เลือก
+                btn.config(bg=color, relief=FLAT, borderwidth=0)
+                if icon:
+                    icon.config(bg=color)
+    
+    def select(self, frame):
+        """สลับไปยัง Tab ตาม Frame"""
+        try:
+            index = self.tab_frames.index(frame)
+            self.switch_tab(index)
+        except ValueError:
+            pass
 
-# ฟังก์ชันสำหรับสลับไปยังแท็บที่ต้องการ
+# สร้าง Custom Tab System
+Tab = CustomTabSystem(GUI)
+
+# เพิ่ม Tabs พร้อมสีที่กำหนด
+T1 = Tab.add_tab(' ระบบขายสินค้า ', COLORS['tab1'], COLORS['tab1_hover'], 
+                 'tab1.png', '💰')
+T2 = Tab.add_tab(' เพิ่มสินค้า ', COLORS['tab2'], COLORS['tab2_hover'], 
+                 'tab2.png', '📦')
+T3 = Tab.add_tab(' Dashboard ', COLORS['tab3'], COLORS['tab3_hover'], 
+                 'tab3.png', '📊')
+T4 = Tab.add_tab(' วิเคราะห์กำไร ', COLORS['tab4'], COLORS['tab4_hover'], 
+                 'tab4.png', '💹')
+T5 = Tab.add_tab(' ตั้งค่าร้านค้า ', COLORS['tab5'], COLORS['tab5_hover'], 
+                 'tab5.png', '⚙️')
+T6 = Tab.add_tab(' ลูกค้าและบิลเครดิต ', COLORS['tab6'], COLORS['tab6_hover'], 
+                 'tab6.png', '💳')
+
+# ฟังก์ชันสำหรับสลับแท็บ
 def switch_to_product_tab():
-    """สลับไปยังแท็บเพิ่มสินค้า (Tab 2)"""
     Tab.select(T2)
     try:
         product_tab.entries['Barcode:'].focus()
@@ -176,7 +238,6 @@ def switch_to_product_tab():
         pass
 
 def switch_to_credit_tab():
-    """สลับไปยังแท็บเครดิต (Tab 6)"""
     Tab.select(T6)
 
 ##########MENU###########
@@ -205,7 +266,7 @@ filemenu.add_command(label='ออกจากโปรแกรม', command=la
 def AboutMenu(event=None):
     GUI2 = Toplevel()
     w = 500
-    h = 500
+    h = 520
     
     ws = GUI.winfo_screenwidth()
     hs = GUI.winfo_screenheight()
@@ -217,7 +278,6 @@ def AboutMenu(event=None):
     GUI2.configure(bg=COLORS['background'])
     GUI2.title('เกี่ยวกับโปรแกรม')
     
-    # Header
     header_frame = Frame(GUI2, bg=COLORS['header'], height=60)
     header_frame.pack(fill=X)
     header_frame.pack_propagate(False)
@@ -228,31 +288,30 @@ def AboutMenu(event=None):
           fg=COLORS['text_light'],
           font=('Helvetica', 16, 'bold')).pack(pady=15)
     
-    # Content
     content_frame = Frame(GUI2, bg=COLORS['background'])
     content_frame.pack(fill=BOTH, expand=True, padx=20, pady=20)
     
     try:
-        uncle_icon = PhotoImage(file='Sale.png').subsample(2)
-        Label(content_frame, image=uncle_icon, bg=COLORS['background']).pack(pady=10)
-        GUI2.uncle_icon = uncle_icon
+        Photo_icon = PhotoImage(file='Sale.png').subsample(2)
+        Label(content_frame, image=Photo_icon, bg=COLORS['background']).pack(pady=10)
+        GUI2.Photo_icon = Photo_icon
     except:
         pass
     
-    info_text = '''Version 1.4 Beta - Credit System
+    info_text = '''Version 1.4 (Beta) - ปรับปรุงล่าสุด: 17 November 2025
 
 ฟีเจอร์ใหม่:
-• ระบบวางบิล (เครดิต)
-• จัดการลูกค้าและวงเงิน
-• ติดตามบิลค้างชำระ
-• ระบบแจ้งเตือนบิลเกินกำหนด
-• Profit Analysis
-• Reorder Point System
-• Supplier Management
-• Shop Settings
+• 🎨 Tab แต่ละอันมีสีเฉพาะตัว
+• 💳 ระบบวางบิล (เครดิต)
+• 👥 จัดการลูกค้าและวงเงิน
+• 📋 ติดตามบิลค้างชำระ
+• 📊 Profit Analysis
+• ⚡ Reorder Point System
 
-Tel: 090-951-3031
-Email: Phattananbaosin@gmail.com'''
+
+ผู้พัฒนา: พัทธนันท์ เบ้าศิลป์
+อีเมล: Phattananbaosinshop@gmail.com
+Tel: 090-951-3031'''
     
     Label(content_frame,
           text=info_text,
@@ -261,7 +320,6 @@ Email: Phattananbaosin@gmail.com'''
           font=('Helvetica', 11),
           justify=CENTER).pack(pady=10)
     
-    # Close Button
     close_btn = Button(content_frame,
                       text='ปิด',
                       command=GUI2.destroy,
@@ -294,14 +352,13 @@ try:
     dashboard_tab = DashboardTab(T3)
     profit_tab = ProfitTab(T4)
     shop_settings_tab = ShopSettingsTab(T5)
-    credit_tab = CreditManagementTab(T6)  # เพิ่ม Tab6
+    credit_tab = CreditManagementTab(T6)
     
-    # ตั้งค่า reference ระหว่างแท็บ
     sales_tab.set_references(
         product_tab=product_tab, 
         dashboard_tab=dashboard_tab, 
         profit_tab=profit_tab,
-        credit_tab=credit_tab  # เพิ่ม credit_tab
+        credit_tab=credit_tab
     )
     
     product_tab.set_references(
@@ -311,29 +368,22 @@ try:
     )
     
     print("=" * 70)
-    print("🎉 โปรแกรมสำหรับ POS Version 1.4 Beta - Credit System")
+    print("🎉 โปรแกรมสำหรับ POS Version 1.4 - Custom Colored Tabs")
     print("=" * 70)
     print("✅ เริ่มทำงานเรียบร้อย!")
     print("=" * 70)
-    print("📋 ฟีเจอร์หลัก:")
-    print("   • ระบบขายและจัดการสต็อก")
-    print("   • Profit Analysis & Reorder Point")
-    print("   • Supplier Management")
-    print("   • Shop Settings")
-    print("   • 💳 ระบบวางบิล (เครดิต) - NEW!")
-    print("   • 👥 จัดการลูกค้าและวงเงิน - NEW!")
-    print("   • 📋 ติดตามบิลค้างชำระ - NEW!")
-    print("=" * 70)
-    print("🎨 Color Theme: Modern Teal")
+    print("🎨 สี Tab:")
+    print("   🟢 Tab 1: Teal (เขียวมิ้นท์)")
+    print("   🔵 Tab 2: Blue (น้ำเงิน)")
+    print("   🟣 Tab 3: Violet (ม่วง)")
+    print("   🟡 Tab 4: Amber (ทอง)")
+    print("   ⚫ Tab 5: Slate (เทา)")
+    print("   🩷 Tab 6: Pink (ชมพู)")
     print("=" * 70)
     
 except Exception as e:
     messagebox.showerror("Error", 
-                        f"เกิดข้อผิดพลาดในการเริ่มโปรแกรม:\n{str(e)}\n\n"
-                        "กรุณาตรวจสอบ:\n"
-                        "1. ไฟล์ tab1.py-tab6.py\n"
-                        "2. ไฟล์ basicsql.py\n"
-                        "3. ติดตั้ง tkcalendar")
+                        f"เกิดข้อผิดพลาดในการเริ่มโปรแกรม:\n{str(e)}")
     import traceback
     traceback.print_exc()
     GUI.quit()

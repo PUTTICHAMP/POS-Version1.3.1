@@ -23,6 +23,10 @@ class ProductTab(Frame):
         self.v_category2 = StringVar()
         self.v_reorder_point2 = StringVar()
         
+        # ตัวแปรค้นหา
+        self.v_search = StringVar()
+        self.v_search.trace('w', self.on_search_change)  # Real-time search
+        
         # ค่าเริ่มต้น
         self.v_unit2.set('ชิ้น')
         self.v_category2.set('')
@@ -56,7 +60,7 @@ class ProductTab(Frame):
         main_container.pack(fill=BOTH, expand=True, padx=20, pady=10)
         
         # ส่วนซ้าย - ตารางสินค้า (65% ของพื้นที่)
-        left_frame = Frame(main_container, bg='white', relief=RIDGE, bd=1)
+        left_frame = Frame(main_container, bg='#f0f0f0', relief=RIDGE, bd=1)
         left_frame.pack(side=LEFT, fill=BOTH, expand=True, padx=(0, 10))
         
         # ส่วนขวา - ฟอร์มเพิ่มสินค้า (35% ของพื้นที่)
@@ -73,8 +77,28 @@ class ProductTab(Frame):
     def create_product_table(self, parent):
         """สร้างตารางแสดงข้อมูลสินค้า"""
         # หัวข้อตาราง
-        table_title = Label(parent, text='รายการสินค้าทั้งหมด', font=('Arial', 14, 'bold'), bg='white')
+        table_title = Label(parent, text='รายการสินค้าทั้งหมด', font=('Arial', 14, 'bold'), bg="#f0f0f0")
         table_title.pack(pady=10)
+        
+        # Frame สำหรับช่องค้นหา
+        search_frame = Frame(parent, bg='white')
+        search_frame.pack(fill=X, padx=10, pady=(0, 10))
+        
+        # ไอคอนค้นหา
+        search_icon = Label(search_frame, text='🔍', font=('Arial', 12), bg='white')
+        search_icon.pack(side=LEFT, padx=(0, 5))
+        
+        # ช่องค้นหา
+        search_entry = ttk.Entry(search_frame, textvariable=self.v_search, font=('Arial', 10))
+        search_entry.pack(side=LEFT, fill=X, expand=True)
+        
+        # ปุ่มล้างการค้นหา
+        clear_btn = ttk.Button(search_frame, text='✖', width=3, command=self.clear_search)
+        clear_btn.pack(side=LEFT, padx=(5, 0))
+        
+        # Label แสดงผลการค้นหา
+        self.search_result_label = Label(parent, text='', font=('Arial', 9), bg='white', fg='#666')
+        self.search_result_label.pack(pady=(0, 5))
         
         # Frame สำหรับตารางและ scrollbar
         table_frame = Frame(parent, bg='white')
@@ -85,7 +109,7 @@ class ProductTab(Frame):
         product_width = [90, 150, 80, 80, 60, 70, 90, 70]
         
         self.table_product = ttk.Treeview(table_frame, columns=product_header, 
-                                         show='headings', height=18)
+                                         show='headings', height=15)
         
         for hd, w in zip(product_header, product_width):
             self.table_product.heading(hd, text=hd)
@@ -110,6 +134,60 @@ class ProductTab(Frame):
         
         # โหลดข้อมูลตาราง
         self.update_table_product()
+        
+    def on_search_change(self, *args):
+        """เรียกใช้เมื่อมีการพิมพ์ในช่องค้นหา (Real-time)"""
+        self.update_table_product()
+        
+    def clear_search(self):
+        """ล้างการค้นหา"""
+        self.v_search.set('')
+        
+    def update_table_product(self):
+        """อัปเดตข้อมูลในตารางสินค้าพร้อมการค้นหา"""
+        # ลบข้อมูลเดิมในตาราง
+        self.table_product.delete(*self.table_product.get_children())
+        
+        # ดึงข้อมูลทั้งหมด
+        data = view_product(allfield=False)
+        
+        # กรองข้อมูลตามคำค้นหา
+        search_text = self.v_search.get().strip().lower()
+        
+        if search_text:
+            # ค้นหาตามรหัสสินค้าหรือชื่อสินค้า
+            filtered_data = []
+            for d in data:
+                barcode = str(d[0]).lower()  # รหัสสินค้า
+                title = str(d[1]).lower()    # ชื่อสินค้า
+                
+                if search_text in barcode or search_text in title:
+                    filtered_data.append(d)
+            
+            # แสดงข้อมูลที่กรองแล้ว
+            for d in filtered_data:
+                self.table_product.insert('', 'end', values=d)
+            
+            # แสดงผลการค้นหา
+            if filtered_data:
+                self.search_result_label.config(
+                    text=f'พบสินค้า {len(filtered_data)} รายการจากทั้งหมด {len(data)} รายการ',
+                    fg='green'
+                )
+            else:
+                self.search_result_label.config(
+                    text='ไม่พบสินค้าที่ค้นหา',
+                    fg='red'
+                )
+        else:
+            # แสดงข้อมูลทั้งหมด
+            for d in data:
+                self.table_product.insert('', 'end', values=d)
+            
+            self.search_result_label.config(
+                text=f'แสดงสินค้าทั้งหมด {len(data)} รายการ',
+                fg='#666'
+            )
         
     def create_product_form(self, parent):
         """สร้างฟอร์มเพิ่ม/แก้ไขสินค้า"""
@@ -303,14 +381,7 @@ class ProductTab(Frame):
             
         except Exception as e:
             messagebox.showerror("Error", f"เกิดข้อผิดพลาดในการบันทึกไฟล์: {str(e)}")
-    
-    def update_table_product(self):
-        """อัปเดตข้อมูลในตารางสินค้า"""
-        self.table_product.delete(*self.table_product.get_children())
-        data = view_product(allfield=False)
-        for d in data:
-            self.table_product.insert('', 'end', values=d)
-            
+        
     def savedata(self):
         """บันทึกข้อมูลสินค้าใหม่หรืออัปเดต"""
         barcode = self.v_barcode2.get()
