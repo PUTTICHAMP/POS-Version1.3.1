@@ -32,7 +32,7 @@ COLORS = {
     'tab4_hover': '#d97706',
     'tab5': '#64748b',      # ⚫ Slate
     'tab5_hover': '#475569',
-    'tab6': '#ec4899',      # 🩷 Pink
+    'tab6': "#f467ad",      # 🩷 Pink
     'tab6_hover': '#db2777',
 }
 
