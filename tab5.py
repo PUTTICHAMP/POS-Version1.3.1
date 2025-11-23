@@ -11,13 +11,13 @@ class ShopSettingsTab:
         
         # Color scheme (ใช้สีเดียวกับโปรแกรมหลัก)
         self.COLORS = {
-            'header': '#475569',
+            'header': '#495057',
             'sidebar': '#475569',
             'background': '#f8fafc',
             'accent': "#c0bdb8",
-            'text_dark': '#0f172a',
+            'text_dark': '#495057',
             'text_light': '#ffffff',
-            'hover': "#b5a9a9",
+            'hover': "#aaacaf",
             'card_bg': '#f0f0f0',  
             'success': '#10b981',
             'border': '#e2e8f0'

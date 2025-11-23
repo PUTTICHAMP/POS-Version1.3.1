@@ -10,7 +10,7 @@ COLORS = {
     'background': '#f8fafc',
     'accent': "#64748b",
     'text_dark': '#0f172a',
-    'text_light': '#0f172a',
+    'text_light': "#f2f4f6",
     'hover': "#888d8c",
     'border': '#5eead4',
     'border_dark': '#0d9488',
@@ -20,19 +20,31 @@ COLORS = {
     'error': "#7A0707",
     'muted': "#f2f5f9",
 
-    'tab1': "#f472b6",      # 🩷 Pink (ชมพูสดใส)
-    'tab1_hover': '#ec4899',
-    'tab2': '#fcd34d',      # 🟡 Yellow (เหลืองอ่อนสดใส)
-    'tab2_hover': '#fbbf24',
-    'tab3': '#14b8a6',      # 🟢 Teal (เขียวมรกตสด)
-    'tab3_hover': '#0d9488',
-    'tab4': '#3b82f6',      # 🔵 Blue (น้ำเงินสด)
-    'tab4_hover': '#2563eb',
-    'tab5': "#64748b",      # 🖤 Dark Blue (น้ำเงินเข้มมาก)
-    'tab5_hover': '#475569',
-    'tab6': '#06b6d4',      # 🩵 Cyan (ฟ้าอมเขียว)
-    'tab6_hover': '#0891b2',
+    # 'tab1': "#f472b6",      # 🩷 Pink (ชมพูสดใส)
+    # 'tab1_hover': '#ec4899',
+    # 'tab2': '#fcd34d',      # 🟡 Yellow (เหลืองอ่อนสดใส)
+    # 'tab2_hover': '#fbbf24',
+    # 'tab3': '#14b8a6',      # 🟢 Teal (เขียวมรกตสด)
+    # 'tab3_hover': '#0d9488',
+    # 'tab4': '#3b82f6',      # 🔵 Blue (น้ำเงินสด)
+    # 'tab4_hover': '#2563eb',
+    # 'tab5': "#64748b",      # 🖤 Dark Blue (น้ำเงินเข้มมาก)
+    # 'tab5_hover': '#475569',
+    # 'tab6': '#06b6d4',      # 🩵 Cyan (ฟ้าอมเขียว)
+    # 'tab6_hover': '#0891b2',
 
+    'tab1': "#aaacaf",      
+    'tab1_hover': "#495057",
+    'tab2': '#aaacaf',     
+    'tab2_hover': '#495057',
+    'tab3': '#aaacaf',      
+    'tab3_hover': '#495057',
+    'tab4': '#aaacaf',     
+    'tab4_hover': '#495057',
+    'tab5': "#aaacaf",      
+    'tab5_hover': '#495057',
+    'tab6': '#aaacaf',     
+    'tab6_hover': '#495057',
 
     # สีสำหรับแต่ละ Tab
     # 'tab1': "#31b0a5",      # 🟢 Teal
@@ -234,7 +246,7 @@ T1 = Tab.add_tab(' ระบบขายสินค้า ', COLORS['tab1'], CO
                  'tab1.png', '💰')
 T2 = Tab.add_tab(' เพิ่มสินค้า ', COLORS['tab2'], COLORS['tab2_hover'], 
                  'tab2.png', '📦')
-T3 = Tab.add_tab(' Dashboard ', COLORS['tab3'], COLORS['tab3_hover'], 
+T3 = Tab.add_tab(' แดชบอร์ด ', COLORS['tab3'], COLORS['tab3_hover'], 
                  'tab3.png', '📊')
 T4 = Tab.add_tab(' วิเคราะห์กำไร ', COLORS['tab4'], COLORS['tab4_hover'], 
                  'tab4.png', '💹')
