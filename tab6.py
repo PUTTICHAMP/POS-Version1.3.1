@@ -75,7 +75,7 @@ class CreditManagementTab(Frame):
         
         # Main Container - ปรับให้เต็มจอ
         main_container = ttk.Notebook(parent)
-        main_container.pack(fill=BOTH, expand=True, padx=10, pady=5)
+        main_container.pack(fill=BOTH, expand=True, padx=40, pady=5)
         
         # Tab 1: จัดการลูกค้า
         customer_frame = Frame(main_container, bg='#ffffff')

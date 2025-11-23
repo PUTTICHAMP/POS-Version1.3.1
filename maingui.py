@@ -10,8 +10,8 @@ COLORS = {
     'background': '#f8fafc',
     'accent': "#64748b",
     'text_dark': '#0f172a',
-    'text_light': '#ffffff',
-    'hover': "#e7f3f2",
+    'text_light': '#0f172a',
+    'hover': "#888d8c",
     'border': '#5eead4',
     'border_dark': '#0d9488',
     'card_bg': "#f7f0f0",
@@ -20,20 +20,34 @@ COLORS = {
     'error': "#7A0707",
     'muted': "#f2f5f9",
 
+    'tab1': "#f472b6",      # 🩷 Pink (ชมพูสดใส)
+    'tab1_hover': '#ec4899',
+    'tab2': '#fcd34d',      # 🟡 Yellow (เหลืองอ่อนสดใส)
+    'tab2_hover': '#fbbf24',
+    'tab3': '#14b8a6',      # 🟢 Teal (เขียวมรกตสด)
+    'tab3_hover': '#0d9488',
+    'tab4': '#3b82f6',      # 🔵 Blue (น้ำเงินสด)
+    'tab4_hover': '#2563eb',
+    'tab5': "#64748b",      # 🖤 Dark Blue (น้ำเงินเข้มมาก)
+    'tab5_hover': '#475569',
+    'tab6': '#06b6d4',      # 🩵 Cyan (ฟ้าอมเขียว)
+    'tab6_hover': '#0891b2',
+
 
     # สีสำหรับแต่ละ Tab
-    'tab1': "#31b0a5",      # 🟢 Teal
-    'tab1_hover': '#0f766e',
-    'tab2': '#3b82f6',      # 🔵 Blue
-    'tab2_hover': '#2563eb',
-    'tab3': '#8b5cf6',      # 🟣 Violet
-    'tab3_hover': '#7c3aed',
-    'tab4': '#f59e0b',      # 🟡 Amber
-    'tab4_hover': '#d97706',
-    'tab5': '#64748b',      # ⚫ Slate
-    'tab5_hover': '#475569',
-    'tab6': "#f467ad",      # 🩷 Pink
-    'tab6_hover': '#db2777',
+    # 'tab1': "#31b0a5",      # 🟢 Teal
+    # 'tab1_hover': '#0f766e',
+    # 'tab2': '#3b82f6',      # 🔵 Blue
+    # 'tab2_hover': '#2563eb',
+    # 'tab3': '#8b5cf6',      # 🟣 Violet
+    # 'tab3_hover': '#7c3aed',
+    # 'tab4': '#f59e0b',      # 🟡 Amber
+    # 'tab4_hover': '#d97706',
+    # 'tab5': '#64748b',      # ⚫ Slate
+    # 'tab5_hover': '#475569',
+    # 'tab6': "#f467ad",      # 🩷 Pink
+    # 'tab6_hover': '#db2777',
+
 }
 
 # Import แต่ละแท็บ
