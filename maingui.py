@@ -7,9 +7,9 @@ from basicsql import *
 COLORS = {
     'header': "#475569",
     'sidebar': '#475569',
-    'background': '#f8fafc',
-    'accent': "#64748b",
-    'text_dark': '#0f172a',
+    'background': "#f8fafc",
+    'accent': "#475569",
+    'text_dark': '#475569',
     'text_light': "#f2f4f6",
     'hover': "#888d8c",
     'border': '#5eead4',
@@ -327,7 +327,6 @@ def AboutMenu(event=None):
     info_text = '''Version 1.3.1 (Beta) - ปรับปรุงล่าสุด: 17 November 2025
 
 ฟีเจอร์ใหม่:
-• 🎨 Tab แต่ละอันมีสีเฉพาะตัว
 • 💳 ระบบวางบิล (เครดิต)
 • 👥 จัดการลูกค้าและวงเงิน
 • 📋 ติดตามบิลค้างชำระ
@@ -350,7 +349,7 @@ Tel: 090-951-3031'''
                       text='ปิด',
                       command=GUI2.destroy,
                       bg=COLORS['accent'],
-                      fg=COLORS['text_dark'],
+                      fg=COLORS['text_light'],
                       font=('Helvetica', 10, 'bold'),
                       relief=FLAT,
                       cursor='hand2',

@@ -160,7 +160,7 @@ class ReceiptPrinter:
     def create_header_decoration(self, width):
         """สร้างเส้นตกแต่งส่วนหัว"""
         d = Drawing(width, 3*mm)
-        d.add(Rect(0, 0, width, 3*mm, fillColor=colors.HexColor('#2563eb'), strokeColor=None))
+        d.add(Rect(0, 0, width, 3*mm, fillColor=colors.HexColor('#475569'), strokeColor=None))
         return d
     
     def create_divider(self, width, color='#e5e7eb'):
@@ -427,13 +427,13 @@ class ReceiptPrinter:
             
             table = Table(table_data, colWidths=[7.5*cm, 2.5*cm, 3.5*cm, 3.5*cm])
             table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0d9488')),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#475569')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('FONTSIZE', (0, 0), (-1, 0), 14),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                 ('TOPPADDING', (0, 0), (-1, 0), 12),
                 ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f1f5f9')]),
-                ('LINEBELOW', (0, 0), (-1, 0), 2.5, colors.HexColor('#0d9488')),
+                ('LINEBELOW', (0, 0), (-1, 0), 2.5, colors.HexColor('#475569')),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 10),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 10),
@@ -448,7 +448,7 @@ class ReceiptPrinter:
             if self.thai_font_available:
                 summary_label = ParagraphStyle('ThaiSumLabel', parent=info_label_style, fontSize=15, alignment=TA_RIGHT, fontName=self.thai_font_name)
                 summary_value = ParagraphStyle('ThaiSumValue', parent=info_value_style, fontSize=15, alignment=TA_RIGHT, fontName=self.thai_font_name)
-                summary_total = ParagraphStyle('ThaiTotal', parent=info_value_style, fontSize=20, alignment=TA_RIGHT, textColor=colors.HexColor('#0d9488'), fontName=self.thai_font_name)
+                summary_total = ParagraphStyle('ThaiTotal', parent=info_value_style, fontSize=20, alignment=TA_RIGHT, textColor=colors.HexColor('#475569'), fontName=self.thai_font_name)
                 
                 summary_data = [
                     [Paragraph(f"<font name='{self.thai_font_name}'><b>ยอดรวม</b></font>", summary_label), 

@@ -21,7 +21,7 @@ font = win32ui.CreateFont({
 pdc.SelectObject(font)
 
 # Draw the text at position (x=100, y=100)
-pdc.TextOut(0, 0, "สวัสจ้าลุงวิศวกร")
+pdc.TextOut(0, 0, "ระบบ POS ด้วย Python")
 
 pdc.EndPage()
 pdc.EndDoc()
